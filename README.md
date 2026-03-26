@@ -1,0 +1,1 @@
+# varierende_str-mforsyning
