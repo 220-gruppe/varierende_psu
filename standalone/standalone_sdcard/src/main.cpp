@@ -7,11 +7,16 @@
 #define SD_SCK 12
 #define SD_CS 10
 
-// data
+// SD library
 File svejsningData;
+
+// data
 String workerID = "E789FA13";
 float heatInput = 70000;
+uint32_t mellemLog;
+int counter = 0;
 
+// data i en struct
 struct SvejseLog
 {
   char id[10];
@@ -19,7 +24,7 @@ struct SvejseLog
   uint32_t tid;
 };
 
-// opret ny instans
+// opret ny instans af sd og struct
 SPIClass sdSPI(FSPI);
 SvejseLog aktuelSvejsning;
 
@@ -33,38 +38,56 @@ void setup()
 
   if (!SD.begin(SD_CS, sdSPI))
   {
-    Serial.println("SD FORBINDELSE FEJLET");
+    Serial.println("SD CONNECTION FAILED");
     return;
   }
 
-  Serial.println("SD FORBINDELSE FORBUNDET");
+  Serial.println("SD CONNECTION FOUND");
+
+  if (!SD.exists("/dokumentation.txt")) // hvis der ikke findes en fil allerede, opret en
+  {
+    svejsningData = SD.open("/dokumentation.txt", FILE_WRITE); // opret fil
+    if (svejsningData)                                         // skriv overskfit
+    {
+      svejsningData.println("NR. | Operatoer_ID | Heat_Input | Timestamp");
+      svejsningData.close();
+      Serial.println("MAKING NEW FILE");
+    }
+  }else{
+    Serial.println("USING EXISTING FILE");
+  }
 }
 
 void saveData()
 {
+  counter++;
+  mellemLog = millis();
+
+  aktuelSvejsning.tid = millis();
   // save data in instans of struct
   strncpy(aktuelSvejsning.id, workerID.c_str(), sizeof(aktuelSvejsning.id)); // workerID
   aktuelSvejsning.heatInput = heatInput;                                     // energy
-  aktuelSvejsning.tid = millis();                                            // time
-  
+  aktuelSvejsning.tid = mellemLog / 1000;
 
-  svejsningData = SD.open("/dokumentation.txt", FILE_WRITE);
+  svejsningData = SD.open("/dokumentation.txt", FILE_APPEND); // tid i sekunder                                      // time
 
   if (svejsningData)
   {
-    Serial.println("GEMMER DATA TIL SD");
-    svejsningData.print("Operatør ID: ");
+
+    svejsningData.print(counter);
+    svejsningData.print(" | ");
     svejsningData.print(aktuelSvejsning.id);
-    svejsningData.print(", heatInput: ");
+    svejsningData.print(" | ");
     svejsningData.print(aktuelSvejsning.heatInput);
-    svejsningData.print(", Tidspunkt: ");
+    svejsningData.print(" | ");
     svejsningData.println(aktuelSvejsning.tid);
-    Serial.println("DATA GEMT");
+
     svejsningData.close();
+    Serial.println("NEW ROW ADDED");
   }
   else
   {
-    Serial.println("Kunne ikke skrive til SD-kort");
+    Serial.println("NO SD-CARD FOUND");
   }
 }
 void loop()
