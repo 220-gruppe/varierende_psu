@@ -7,6 +7,23 @@
 
 void createFile()
 {
+    if (!SD.exists("/logins.csv"))
+    {
+        logins = SD.open("/logins.csv", FILE_WRITE); // opret fil
+        if (logins)                                  // skriv overskfit
+        {
+            logins.print("UID");
+            logins.print(";");
+            logins.print("NAVN");
+            logins.print(";");
+            logins.print("PIN");
+            logins.println(";");
+
+            logins.close();
+        }
+        Serial.println("Oprettet Login.csv");
+    }
+
     if (!SD.exists("/dokumentation.csv")) // hvis der ikke findes en fil allerede, opret en
     {
         svejsningData = SD.open("/dokumentation.csv", FILE_WRITE); // opret fil
@@ -21,12 +38,12 @@ void createFile()
             svejsningData.println("Timestamp");
 
             svejsningData.close();
-            Serial.println("Opretter ny fil");
         }
+        Serial.println("Oprettet dokumentaions.csv");
     }
     else
     {
-        Serial.println("Bruger eksisterende fil");
+        Serial.println("Bruger eksisterende logins.csv og dokumentaions.csv");
     }
 }
 
@@ -35,17 +52,15 @@ void saveData()
     counter++;
     mellemLog = millis();
 
-    aktuelSvejsning.tid = millis();
     // save data in instans of struct
     strncpy(aktuelSvejsning.id, workerID.c_str(), sizeof(aktuelSvejsning.id)); // workerID
     aktuelSvejsning.heatInput = heatInput;                                     // energy
     aktuelSvejsning.tid = mellemLog / 1000;
 
-    svejsningData = SD.open("/dokumentation.csv", FILE_APPEND); // tid i sekunder                                      // time
+    svejsningData = SD.open("/dokumentation.csv", FILE_APPEND);
 
     if (svejsningData)
     {
-
         svejsningData.print(counter);
         svejsningData.print(";");
         svejsningData.print(aktuelSvejsning.id);
@@ -98,7 +113,9 @@ void setupSPI()
 {
     WiFi.softAP(SSID, PASSWORD);
     IPAddress IP = WiFi.softAPIP();
+    server.on("/gemLogin", HTTP_POST, handleGemLogin);
     server.on("/", handleRoot);
+    server.on("/opret", handleOpretSide);
     server.begin();
     Serial.print("Server er oppe på: ");
     Serial.println(IP);
@@ -118,8 +135,63 @@ void setupSPI()
 
     // RFID start
     rc.PCD_Init();
-    delay(100);
-    rc.PCD_DumpVersionToSerial(); // 0x12 for klon
+    // delay(100);
+    // rc.PCD_DumpVersionToSerial(); // 0x12 for klon
+}
+
+void opretLogin()
+{
+    logins = SD.open("/logins.csv", FILE_APPEND);
+
+    if (logins)
+    {
+        logins.print(tempUID);
+        logins.print(";");
+        logins.print(tempNavn);
+        logins.print(";");
+        logins.print(tempPin);
+        logins.println(";");
+
+        logins.close();
+        Serial.print("Nyt login oprettet til: ");
+        Serial.print(tempNavn);
+        Serial.print(", ");
+        Serial.println(tempUID);
+    }
+    waitforChip = false;
+}
+
+bool tjekLogin(String fundetUID)
+{
+    File loginFil = SD.open("/logins.csv", FILE_READ);
+    if (!loginFil)
+    {
+        Serial.print("Kunne ikke åbne logins.csv...");
+        return false;
+    }
+
+    while (loginFil.available())
+    {
+        String linje = loginFil.readStringUntil('\n');
+        linje.trim();
+
+        int fsemi = linje.indexOf(';');
+        if (fsemi != -1)
+        {
+            String filUID = linje.substring(0, fsemi);
+
+            if (filUID == fundetUID)
+            {
+                int asemi = linje.indexOf(';', fsemi + 1);
+                workerID = linje.substring(fsemi + 1, asemi);
+
+                loginFil.close();
+                return true;
+            }
+        }
+    }
+    loginFil.close();
+    return false;
 }
 
 #endif

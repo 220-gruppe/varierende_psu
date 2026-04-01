@@ -6,14 +6,15 @@
 #include <SD.h>
 #include <config.h>
 
-// Struct definitionen må gerne stå her (da det er en opskrift, ikke en variabel)
-struct SvejseLog {
+// struct
+struct SvejseLog
+{
   char id[10];
   float heatInput;
   uint32_t tid;
 };
 
-// EXTERN fortæller andre filer at disse variabler findes
+// extern variabler så de kan bruges globalt
 extern String scannedUID;
 extern MFRC522 rc;
 extern String workerID;
@@ -22,5 +23,10 @@ extern uint32_t mellemLog;
 extern int counter;
 extern SvejseLog aktuelSvejsning;
 extern File svejsningData;
+extern File logins;
+extern bool waitforChip;
+extern String tempNavn;
+extern String tempPin;
+extern String tempUID;
 
 #endif

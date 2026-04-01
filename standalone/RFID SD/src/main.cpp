@@ -1,8 +1,10 @@
 // egne libraries
+#include <variabler.h>
 #include <server.h>
 #include <config.h>
 #include <functions.h>
-#include <variabler.h>
+
+WebServer server(80);
 
 String scannedUID = "";
 MFRC522 rc(RFID_SDA, RFID_RST); // ny instans af scanner
@@ -12,12 +14,20 @@ uint32_t mellemLog = 0;    // ændres til reelt tidspunkt
 int counter = 0;           // blot en counter til antal
 SvejseLog aktuelSvejsning; // instans af struct
 File svejsningData;        // instans af sdkort
+File logins;               // instans af sdkort
+
+// variabler til opret nyt login
+String tempNavn = "";
+String tempPin = "";
+String tempUID = "";
+bool waitforChip = false;
 
 void setup()
 {
   Serial.begin(115200);
   delay(2000);
 
+  // setup og tjek for allerde oprettet filer
   setupSPI();
   createFile();
 
@@ -29,11 +39,34 @@ void setup()
 void loop()
 {
   server.handleClient();
-  if (digitalRead(3) == LOW)
+
+  if (rc.PICC_IsNewCardPresent() && rc.PICC_ReadCardSerial())
   {
-    Serial.println("Søger efter adgangskort: ");
-    searchUID(); // finder UID
-    saveData();
-    delay(1000);
+    String fundetUID = "";
+    for (byte i = 0; i < rc.uid.size; i++)
+    {
+      fundetUID += (rc.uid.uidByte[i] < 0x10 ? "0" : "");
+      fundetUID += String(rc.uid.uidByte[i], HEX);
+    }
+    fundetUID.toUpperCase();
+
+    if (waitforChip)
+    {
+      tempUID = fundetUID;
+      opretLogin(); // Gemmer i logins.csv og sætter waitforChip = false
+    }
+    else
+    {
+      if (tjekLogin(fundetUID))
+      {
+        Serial.println("Adgang godkendt: " + workerID);
+      }
+      else
+      {
+        Serial.println("Adgang nægtet, prøv en ny chip.");
+      }
+    }
+    rc.PICC_HaltA();
+    rc.PCD_StopCrypto1();
   }
 }

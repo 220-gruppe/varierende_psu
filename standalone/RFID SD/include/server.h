@@ -5,54 +5,82 @@
 #include <WiFi.h>
 #include <variabler.h>
 
-WebServer server(80);
+extern WebServer server;
+extern String tempNavn;
+extern String tempPin;
+extern bool waitforChip;
 
-void handleRoot() {
-  String html = "<html><head>";
-  html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"; // Vigtigt for mobil!
-  html += "<meta charset='UTF-8'>";
-  
-  html += "<style>";
-  // Generel styling af siden
-  html += "body { font-family: sans-serif; text-align: center; background-color: #f0f2f5; margin: 20px; }";
-  
-  // Styling af den store knap
-  html += ".btn {";
-  html += "  display: block;";
-  html += "  width: 100%;";            // Fyld hele bredden
-  html += "  max-width: 300px;";       // Men ikke mere end 300px
-  html += "  margin: 15px auto;";      // Centrer knappen og giv luft
-  html += "  padding: 20px;";          // Gør den tyk og stor
-  html += "  background-color: #007bff;"; // Blå farve
-  html += "  color: white;";           // Hvid tekst
-  html += "  text-decoration: none;";  // Fjern understregning fra link
-  html += "  font-size: 22px;";        // Stor tekst
-  html += "  font-weight: bold;";
-  html += "  border-radius: 12px;";    // Bløde hjørner
-  html += "  border: none;";
-  html += "  box-shadow: 0 4px 6px rgba(0,0,0,0.1);"; // Lidt skygge
-  html += "}";
+const String STYLE = "<style>"
+                     "*{box-sizing: border-box;}"
+                     "body{font-family:sans-serif; text-align:center; padding:15px; background:#f0f2f5; margin:0;}"
+                     ".card{background:white; padding:20px; border-radius:15px; shadow:0 4px 8px rgba(0,0,0,0.1); "
+                     "max-width:350px; margin:20px auto; width: 95%;}" 
+                     "h1{color:#2c3e50; font-size: 1.8em;}"
+                     ".status{font-size:1.1em; color:#e67e22; margin:15px 0; font-weight:bold; padding:10px; border-radius:8px; background:#fff3e0;}"
+                     "input{margin:10px 0; padding:12px; width:100%; border:1px solid #ccc; border-radius:8px; font-size:16px;}"
+                     ".btn{background:#3498db; color:white; border:none; padding:15px; width:100%; border-radius:8px; "
+                     "font-weight:bold; cursor:pointer; text-decoration:none; display:inline-block; font-size:18px; margin-top:10px;}"
+                     ".btn-green{background:#27ae60;}"
+                     "hr{border:0; border-top:1px solid #eee; margin:20px 0;}"
+                     "</style>";
 
-  // En rød variant til f.eks. "Slet" eller "Nulstil"
-  html += ".btn-red { background-color: #dc3545; }";
-  
-  html += "h1 { color: #333; }";
-  html += "p { font-size: 18px; color: #666; }";
-  html += "</style></head><body>";
+void handleRoot()
+{
+  String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'>";
+  html += STYLE;
+  html += "</head><body>";
+  html += "<div class='card'>";
+  html += "<h1>Spider-feet</h1>";
+  html += "<hr>";
 
-  html += "<h1>Svejse System</h1>";
-  html += "<div>";
-  html += "  <p>Operatør: <b>" + workerID + "</b></p>";
-  html += "  <p>Status: <span style='color:green'>FORBUNDET</span></p>";
-  html += "</div>";
+  if (waitforChip)
+  {
+    html += "<div class='status'>VENTER PÅ TAG...<br><small>(Navn: " + tempNavn + ")</small></div>";
+  }
+  else
+  {
+    html += "<div class='status' style='color:#27ae60;'>System Klar</div>";
+  }
 
-  // De store knapper
-  html += "<a href='/download' class='btn'>Hent Logfil</a>";
-  html += "<a href='/reset' class='btn btn-red'>Nulstil Data</a>";
+  html += "<p>Scan venligst din chip på maskinen for at logge data.</p>";
+  html += "<br>";
 
-  html += "</body></html>";
+  // Knap til at gå til opret-siden
+  html += "<a href='/opret' class='btn'>Opret ny bruger</a>";
+  html += "</div></body></html>";
 
   server.send(200, "text/html", html);
+}
+
+void handleOpretSide()
+{
+  String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'>";
+  html += STYLE;
+  html += "</head><body>";
+  html += "<div class='card'>";
+  html += "<h1>Ny Bruger</h1>";
+  html += "<form action='/gemLogin' method='POST'>";
+  html += "  <input type='text' name='brugerNavn' placeholder='Navn på medarbejder' required><br>";
+  html += "  <input type='number' name='pinKode' placeholder='4-cifret PIN' required><br>";
+  html += "  <input type='submit' class='btn btn-green' value='Start oprettelse'>";
+  html += "</form>";
+  html += "<a href='/' style='display:block; margin-top:15px; color:#7f8c8d;'>Annuller</a>";
+  html += "</div></body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void handleGemLogin()
+{
+  if (server.hasArg("brugerNavn") && server.hasArg("pinKode"))
+  {
+    tempNavn = server.arg("brugerNavn");
+    tempPin = server.arg("pinKode");
+    waitforChip = true;
+
+    server.sendHeader("Location", "/");
+    server.send(303);
+  }
 }
 
 #endif
