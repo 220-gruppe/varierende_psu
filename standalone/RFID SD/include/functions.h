@@ -16,8 +16,7 @@ void createFile()
             logins.print(";");
             logins.print("NAVN");
             logins.print(";");
-            logins.print("PIN");
-            logins.println(";");
+            logins.println("PIN");
 
             logins.close();
         }
@@ -111,11 +110,14 @@ void searchUID()
 
 void setupSPI()
 {
-    WiFi.softAP(SSID, PASSWORD);
-    IPAddress IP = WiFi.softAPIP();
-    server.on("/gemLogin", HTTP_POST, handleGemLogin);
-    server.on("/", handleRoot);
-    server.on("/opret", handleOpretSide);
+    WiFi.softAP(SSID, PASSWORD);                               // hotspot kode
+    IPAddress IP = WiFi.softAPIP();                            // initialiser hotspot
+    server.on("/gemLogin", HTTP_POST, handleGemLogin);         // gemLogin funktion
+    server.on("/", handleRoot);                                //
+    server.on("/verificerPin", HTTP_POST, handleVerificerPin); // tjek kode funktion
+    server.on("/opret", handleOpretSide);                      // opret nyt login funktion
+    server.on("/checkStatus", handleCheckStatus);              // sørger for at opdatere siden på telefonen
+    server.on("/logout", handleLogout);                        // log ud
     server.begin();
     Serial.print("Server er oppe på: ");
     Serial.println(IP);
@@ -133,10 +135,7 @@ void setupSPI()
         Serial.println("SD CONNECTED SUCCES");
     }
 
-    // RFID start
     rc.PCD_Init();
-    // delay(100);
-    // rc.PCD_DumpVersionToSerial(); // 0x12 for klon
 }
 
 void opretLogin()
@@ -149,14 +148,15 @@ void opretLogin()
         logins.print(";");
         logins.print(tempNavn);
         logins.print(";");
-        logins.print(tempPin);
-        logins.println(";");
+        logins.println(tempPin);
 
         logins.close();
         Serial.print("Nyt login oprettet til: ");
         Serial.print(tempNavn);
         Serial.print(", ");
-        Serial.println(tempUID);
+        Serial.print(tempUID);
+        Serial.print(", ");
+        Serial.println(tempPin);
     }
     waitforChip = false;
 }
@@ -176,6 +176,7 @@ bool tjekLogin(String fundetUID)
         linje.trim();
 
         int fsemi = linje.indexOf(';');
+        int asemi = linje.indexOf(';', fsemi + 1);
         if (fsemi != -1)
         {
             String filUID = linje.substring(0, fsemi);
@@ -183,10 +184,16 @@ bool tjekLogin(String fundetUID)
             if (filUID == fundetUID)
             {
                 int asemi = linje.indexOf(';', fsemi + 1);
-                workerID = linje.substring(fsemi + 1, asemi);
 
-                loginFil.close();
-                return true;
+                if (asemi != -1)
+                {
+                    workerID = linje.substring(fsemi + 1, asemi);
+                    korrektPin = linje.substring(asemi + 1);
+
+                    loginFil.close();
+                    
+                    return true;
+                }
             }
         }
     }

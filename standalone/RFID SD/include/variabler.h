@@ -28,5 +28,8 @@ extern bool waitforChip;
 extern String tempNavn;
 extern String tempPin;
 extern String tempUID;
+extern String korrektPin;
+extern bool manglerPin;
+extern bool isLoggedIn;
 
 #endif

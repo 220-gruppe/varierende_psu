@@ -21,13 +21,14 @@ String tempNavn = "";
 String tempPin = "";
 String tempUID = "";
 bool waitforChip = false;
+bool isLoggedIn = false;
 
 void setup()
 {
   Serial.begin(115200);
   delay(2000);
 
-  // setup og tjek for allerde oprettet filer
+  // setup og tjek for allerede oprettet filer
   setupSPI();
   createFile();
 
@@ -40,33 +41,37 @@ void loop()
 {
   server.handleClient();
 
-  if (rc.PICC_IsNewCardPresent() && rc.PICC_ReadCardSerial())
+  if (!isLoggedIn)
   {
-    String fundetUID = "";
-    for (byte i = 0; i < rc.uid.size; i++)
+    if (rc.PICC_IsNewCardPresent() && rc.PICC_ReadCardSerial())
     {
-      fundetUID += (rc.uid.uidByte[i] < 0x10 ? "0" : "");
-      fundetUID += String(rc.uid.uidByte[i], HEX);
-    }
-    fundetUID.toUpperCase();
-
-    if (waitforChip)
-    {
-      tempUID = fundetUID;
-      opretLogin(); // Gemmer i logins.csv og sætter waitforChip = false
-    }
-    else
-    {
-      if (tjekLogin(fundetUID))
+      String fundetUID = "";
+      for (byte i = 0; i < rc.uid.size; i++)
       {
-        Serial.println("Adgang godkendt: " + workerID);
+        fundetUID += (rc.uid.uidByte[i] < 0x10 ? "0" : "");
+        fundetUID += String(rc.uid.uidByte[i], HEX);
+      }
+      fundetUID.toUpperCase();
+
+      if (waitforChip)
+      {
+        tempUID = fundetUID;
+        opretLogin(); // Gemmer i logins.csv og sætter waitforChip = false
       }
       else
       {
-        Serial.println("Adgang nægtet, prøv en ny chip.");
+        if (tjekLogin(fundetUID))
+        {
+          manglerPin = true;
+          Serial.println("Chip fundet. Venter på kode...");
+        }
+        else
+        {
+          Serial.println("Chip findes ikke...");
+        }
       }
+      rc.PICC_HaltA();
+      rc.PCD_StopCrypto1();
     }
-    rc.PICC_HaltA();
-    rc.PCD_StopCrypto1();
   }
 }
