@@ -31,10 +31,6 @@ void setup()
   // setup og tjek for allerede oprettet filer
   setupSPI();
   createFile();
-
-  pinMode(SD_CS, OUTPUT);
-  pinMode(RFID_SDA, OUTPUT);
-  pinMode(3, INPUT_PULLUP);
 }
 
 void loop()

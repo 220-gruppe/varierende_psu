@@ -122,6 +122,11 @@ void setupSPI()
     Serial.print("Server er oppe på: ");
     Serial.println(IP);
 
+    //intitialiser pinmodes
+    pinMode(SD_CS, OUTPUT);
+    pinMode(RFID_SDA, OUTPUT);
+    pinMode(3, INPUT_PULLUP);
+
     // Start SPI
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
@@ -191,7 +196,7 @@ bool tjekLogin(String fundetUID)
                     korrektPin = linje.substring(asemi + 1);
 
                     loginFil.close();
-                    
+
                     return true;
                 }
             }

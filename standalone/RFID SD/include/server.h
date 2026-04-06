@@ -14,7 +14,7 @@ String korrektPin = "";
 
 const String STYLE = "<style>"
                      "*{box-sizing: border-box;}"
-                     "body{font-family:sans-serif; text-align:center; padding:15px; background:#0f454e; margin:0;}"
+                     "body{overflow: hidden; width: 100%; height: 100%; touch-action: manipulation; user-select: none; font-family:sans-serif; text-align:center; padding:15px; background:#0f454e; margin:0;}"
                      ".card{background:white; padding:20px; border-radius:15px; shadow:0 4px 8px rgba(0,0,0,0.1); "
                      "max-width:350px; margin:20px auto; width: 95%;}"
                      "h1{color:#050854; font-size: 1.8em;}"
