@@ -57,21 +57,27 @@ void loop()
 
   if (nuStatus != sidsteStatus)
   {
-    tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
-    tft.setTextDatum(MC_DATUM);
 
-    tft.fillRect(0, 140, 320, 20, SPIDER_BG);
+    tft.fillRect(0, 97, 320, 222, SPIDER_BG);
 
-    tft.drawString(nuStatus, 160, 155, 1);
+    if (nuStatus == "CHIP FINDES IKKE!")
+    {
+      tft.setTextColor(TFT_RED, SPIDER_BG);
+      tft.setTextDatum(MC_DATUM);
+      tft.drawString(nuStatus, 160, 135, 1);
+    }
+    else
+    {
+      tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+      tft.setTextDatum(MC_DATUM);
+      tft.drawString(nuStatus, 160, 135, 1);
+    }
     sidsteStatus = nuStatus;
 
     if (nuStatus == "CHIP FINDES IKKE!")
     {
-      delay(3000);
+      delay(2000);
       ikkeKodet = false;
-      waitforChip = true;
-      // Vi behøver ikke nulstille sidsteStatus,
-      // loopet finder selv ud af at nuStatus er ændret næste gang.
     }
   }
 
@@ -97,13 +103,12 @@ void loop()
         if (tjekLogin(fundetUID))
         {
           manglerPin = true;
-          ikkeKodet = false;
           Serial.println("Chip fundet. Venter på kode...");
         }
         else
         {
-          Serial.println("Chip findes ikke...");
           ikkeKodet = true;
+          Serial.println("Chip findes ikke...");
         }
       }
       rc.PICC_HaltA();
