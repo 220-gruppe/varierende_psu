@@ -6,6 +6,8 @@
 #include <SD.h>
 #include <config.h>
 
+TFT_eSPI tft = TFT_eSPI();
+
 // struct
 struct SvejseLog
 {
@@ -13,6 +15,10 @@ struct SvejseLog
   float heatInput;
   uint32_t tid;
 };
+//display farver osv
+#define SPIDER_BG 0xE6D6 //BAGGRUND
+#define SPIDER_BLUE 0x201F //BLÅ TEKST 
+
 
 // extern variabler så de kan bruges globalt
 extern String scannedUID;

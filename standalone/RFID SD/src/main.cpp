@@ -1,8 +1,9 @@
 // egne libraries
+#include <logo.h>
 #include <variabler.h>
-#include <server.h>
 #include <config.h>
 #include <functions.h>
+#include <server.h>
 
 WebServer server(80);
 
@@ -33,9 +34,46 @@ void setup()
   createFile();
 }
 
+String sidsteStatus = "";
+bool ikkeKodet = false;
+
 void loop()
 {
   server.handleClient();
+
+  String nuStatus = "";
+  if (isLoggedIn)
+    nuStatus = "VELKOMMEN " + workerID;
+  else if (manglerPin)
+    nuStatus = "INDTAST PIN";
+  else if (waitforChip)
+    nuStatus = "SCAN NY CHIP...";
+  else if (ikkeKodet)
+  {
+    nuStatus = "CHIP FINDES IKKE!";
+  }
+  else
+    nuStatus = "KLAR TIL SCAN";
+
+  if (nuStatus != sidsteStatus)
+  {
+    tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+    tft.setTextDatum(MC_DATUM);
+
+    tft.fillRect(0, 140, 320, 20, SPIDER_BG);
+
+    tft.drawString(nuStatus, 160, 155, 1);
+    sidsteStatus = nuStatus;
+
+    if (nuStatus == "CHIP FINDES IKKE!")
+    {
+      delay(3000);
+      ikkeKodet = false;
+      waitforChip = true;
+      // Vi behøver ikke nulstille sidsteStatus,
+      // loopet finder selv ud af at nuStatus er ændret næste gang.
+    }
+  }
 
   if (!isLoggedIn)
   {
@@ -59,11 +97,13 @@ void loop()
         if (tjekLogin(fundetUID))
         {
           manglerPin = true;
+          ikkeKodet = false;
           Serial.println("Chip fundet. Venter på kode...");
         }
         else
         {
           Serial.println("Chip findes ikke...");
+          ikkeKodet = true;
         }
       }
       rc.PICC_HaltA();

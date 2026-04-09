@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include <TFT_eSPI.h>
 
 // server settings
 const char *SSID = "Spider-feet";

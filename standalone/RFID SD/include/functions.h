@@ -117,15 +117,29 @@ void setupSPI()
     server.on("/verificerPin", HTTP_POST, handleVerificerPin); // tjek kode funktion
     server.on("/opret", handleOpretSide);                      // opret nyt login funktion
     server.on("/checkStatus", handleCheckStatus);              // sørger for at opdatere siden på telefonen
+    server.on("/reset", handleResetFile);                      // reset logins for test
     server.on("/logout", handleLogout);                        // log ud
     server.begin();
     Serial.print("Server er oppe på: ");
     Serial.println(IP);
 
-    //intitialiser pinmodes
+    // intitialiser pinmodes
     pinMode(SD_CS, OUTPUT);
     pinMode(RFID_SDA, OUTPUT);
     pinMode(3, INPUT_PULLUP);
+
+    // SKÆRM
+    pinMode(15, OUTPUT);
+    digitalWrite(15, HIGH);
+
+    // LILYGO DISPLAY
+    tft.init();
+    tft.setRotation(1);
+    tft.fillScreen(0xE6D6);
+    tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+    tft.setTextSize(3);
+    tft.setSwapBytes(true);
+    tft.pushImage(35, 10, 250, 77, logo);
 
     // Start SPI
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);

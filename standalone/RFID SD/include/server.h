@@ -5,6 +5,8 @@
 #include <WiFi.h>
 #include <variabler.h>
 
+void createFile();
+
 extern WebServer server;
 extern String tempNavn;
 extern String tempPin;
@@ -31,7 +33,7 @@ void handleRoot()
   String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'><meta charset='UTF-8'>";
   html += STYLE;
 
-  //java, reloader siden
+  // java, reloader siden
   html += "<script>";
   html += "let currentStatus = '" + String(isLoggedIn ? "LOGGED_IN" : (manglerPin ? "WAITING_FOR_PIN" : (waitforChip ? "WAITING_FOR_CHIP" : "READY"))) + "';";
   html += "setInterval(function() {";
@@ -72,6 +74,7 @@ void handleRoot()
     {
       html += "<div class='status' style='color:#27ae60;'>Scan chip for at starte</div>";
       html += "<br><a href='/opret' class='btn'>Opret ny bruger</a>";
+      html += "<br><a href='/reset' class='btn' style='background:#FF0000;'>Slet logins(DEBUG)</a>";
     }
   }
 
@@ -155,6 +158,18 @@ void handleLogout()
 {
   isLoggedIn = false;
   workerID = "";
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+void handleResetFile()
+{
+  if (SD.exists("/logins.csv"))
+  {
+    SD.remove("/logins.csv");
+    createFile();
+  }
+  Serial.println("logins slettet");
   server.sendHeader("Location", "/");
   server.send(303);
 }
