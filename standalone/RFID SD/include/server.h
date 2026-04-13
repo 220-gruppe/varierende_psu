@@ -5,14 +5,16 @@
 #include <WiFi.h>
 #include <variabler.h>
 
+WebServer server(80);
+
 void createFile();
 
 extern WebServer server;
 extern String tempNavn;
 extern String tempPin;
 extern bool waitforChip;
-bool manglerPin = false;
-String korrektPin = "";
+extern bool manglerPin;
+extern String indtastet;
 
 const String STYLE = "<style>"
                      "*{box-sizing: border-box;}"
@@ -117,7 +119,7 @@ void handleVerificerPin()
 {
   if (server.hasArg("indtastetPin"))
   {
-    String indtastet = server.arg("indtastetPin");
+    indtastet = server.arg("indtastetPin");
 
     if (indtastet == korrektPin)
     {

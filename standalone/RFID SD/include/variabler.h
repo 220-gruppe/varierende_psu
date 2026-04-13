@@ -5,8 +5,13 @@
 #include <MFRC522.h>
 #include <SD.h>
 #include <config.h>
+#include <Wire.h>
+#include <Adafruit_MPR121.h>
+#include <TFT_eSPI.h>
 
+Adafruit_MPR121 numpad = Adafruit_MPR121();
 TFT_eSPI tft = TFT_eSPI();
+MFRC522 rc(RFID_SDA, RFID_RST); // ny instans af scanner
 
 // struct
 struct SvejseLog
@@ -15,10 +20,10 @@ struct SvejseLog
   float heatInput;
   uint32_t tid;
 };
-//display farver osv
-#define SPIDER_BG 0xE6D6 //BAGGRUND
-#define SPIDER_BLUE 0x201F //BLÅ TEKST 
 
+// display farver osv
+#define SPIDER_BG 0xE6D6   // BAGGRUND
+#define SPIDER_BLUE 0x201F // BLÅ TEKST
 
 // extern variabler så de kan bruges globalt
 extern String scannedUID;
@@ -34,8 +39,14 @@ extern bool waitforChip;
 extern String tempNavn;
 extern String tempPin;
 extern String tempUID;
-extern String korrektPin;
+
 extern bool manglerPin;
 extern bool isLoggedIn;
+extern String indtastet;
+extern bool ikkeKodet;
+extern String nuStatus;
+extern String tastet;
+extern String korrektPin;
+extern String sidsteStatus;
 
 #endif

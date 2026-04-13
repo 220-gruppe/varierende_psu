@@ -5,10 +5,7 @@
 #include <functions.h>
 #include <server.h>
 
-WebServer server(80);
-
 String scannedUID = "";
-MFRC522 rc(RFID_SDA, RFID_RST); // ny instans af scanner
 String workerID = "E789FA13";
 float heatInput = 70000;   // ændres til noget fra sensor
 uint32_t mellemLog = 0;    // ændres til reelt tidspunkt
@@ -22,97 +19,34 @@ String tempNavn = "";
 String tempPin = "";
 String tempUID = "";
 bool waitforChip = false;
+
+bool manglerPin = false;
 bool isLoggedIn = false;
+String indtastet = "";
+bool ikkeKodet = false;
+String nuStatus = "";
+String tastet = "";
+String korrektPin = "";
+String sidsteStatus = "";
 
 void setup()
 {
   Serial.begin(115200);
-  delay(2000);
 
   // setup og tjek for allerede oprettet filer
   setupSPI();
   createFile();
 }
 
-String sidsteStatus = "";
-bool ikkeKodet = false;
-
 void loop()
 {
   server.handleClient();
 
-  String nuStatus = "";
-  if (isLoggedIn)
-    nuStatus = "VELKOMMEN " + workerID;
-  else if (manglerPin)
-    nuStatus = "INDTAST PIN";
-  else if (waitforChip)
-    nuStatus = "SCAN NY CHIP...";
-  else if (ikkeKodet)
+  opdaterScreen(); //OPDATER SKÆRM
+  kortScan(); //TJEKKER OM KORT ER PÅ
+
+  if (manglerPin) //MANGLER PIN, TJEK KODE
   {
-    nuStatus = "CHIP FINDES IKKE!";
-  }
-  else
-    nuStatus = "KLAR TIL SCAN";
-
-  if (nuStatus != sidsteStatus)
-  {
-
-    tft.fillRect(0, 97, 320, 222, SPIDER_BG);
-
-    if (nuStatus == "CHIP FINDES IKKE!")
-    {
-      tft.setTextColor(TFT_RED, SPIDER_BG);
-      tft.setTextDatum(MC_DATUM);
-      tft.drawString(nuStatus, 160, 135, 1);
-    }
-    else
-    {
-      tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
-      tft.setTextDatum(MC_DATUM);
-      tft.drawString(nuStatus, 160, 135, 1);
-    }
-    sidsteStatus = nuStatus;
-
-    if (nuStatus == "CHIP FINDES IKKE!")
-    {
-      delay(2000);
-      ikkeKodet = false;
-    }
-  }
-
-  if (!isLoggedIn)
-  {
-    if (rc.PICC_IsNewCardPresent() && rc.PICC_ReadCardSerial())
-    {
-      String fundetUID = "";
-      for (byte i = 0; i < rc.uid.size; i++)
-      {
-        fundetUID += (rc.uid.uidByte[i] < 0x10 ? "0" : "");
-        fundetUID += String(rc.uid.uidByte[i], HEX);
-      }
-      fundetUID.toUpperCase();
-
-      if (waitforChip)
-      {
-        tempUID = fundetUID;
-        opretLogin(); // Gemmer i logins.csv og sætter waitforChip = false
-      }
-      else
-      {
-        if (tjekLogin(fundetUID))
-        {
-          manglerPin = true;
-          Serial.println("Chip fundet. Venter på kode...");
-        }
-        else
-        {
-          ikkeKodet = true;
-          Serial.println("Chip findes ikke...");
-        }
-      }
-      rc.PICC_HaltA();
-      rc.PCD_StopCrypto1();
-    }
+    numpadLogik();
   }
 }
