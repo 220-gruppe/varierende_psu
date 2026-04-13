@@ -49,7 +49,7 @@ void handleRoot()
   {
     html += "<h1>Spider-feet</h1><hr>";
     html += "<h2>Velkommen, " + workerID + "</h2>";
-    html += "<div class='status' style='background:#d4edda; color:#155724;'>Systemet er klar til svejsning</div>";
+    html += "<div class='status' style='background:#d4edda; color:#155724;'>Systemet er klar til svejsning...</div>";
     html += "<p>Data logges automatisk under arbejde.</p>";
     html += "<br><br>";
     html += "<a href='/logout' class='btn' style='background:#dc3545;'>Log ud</a>";
@@ -125,6 +125,7 @@ void handleVerificerPin()
     {
       manglerPin = false;
       isLoggedIn = true;
+      tidStart = millis();
 
       server.sendHeader("Location", "/");
       server.send(303);

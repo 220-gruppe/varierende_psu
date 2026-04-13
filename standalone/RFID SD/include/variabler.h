@@ -21,9 +21,11 @@ struct SvejseLog
   uint32_t tid;
 };
 
-// display farver osv
+// display farver og andre konstanter
 #define SPIDER_BG 0xE6D6   // BAGGRUND
 #define SPIDER_BLUE 0x201F // BLÅ TEKST
+#define TIMER 30000 //30 sekunder MINUTTER
+
 
 // extern variabler så de kan bruges globalt
 extern String scannedUID;
@@ -48,5 +50,7 @@ extern String nuStatus;
 extern String tastet;
 extern String korrektPin;
 extern String sidsteStatus;
+
+extern unsigned long tidStart;
 
 #endif

@@ -6,7 +6,7 @@
 #include <server.h>
 
 String scannedUID = "";
-String workerID = "E789FA13";
+String workerID = "";
 float heatInput = 70000;   // ændres til noget fra sensor
 uint32_t mellemLog = 0;    // ændres til reelt tidspunkt
 int counter = 0;           // blot en counter til antal
@@ -29,6 +29,8 @@ String tastet = "";
 String korrektPin = "";
 String sidsteStatus = "";
 
+unsigned long tidStart = 0;
+
 void setup()
 {
   Serial.begin(115200);
@@ -42,11 +44,16 @@ void loop()
 {
   server.handleClient();
 
-  opdaterScreen(); //OPDATER SKÆRM
-  kortScan(); //TJEKKER OM KORT ER PÅ
+  opdaterScreen(); // OPDATER SKÆRM
+  kortScan();      // TJEKKER FOR KORT
 
-  if (manglerPin) //MANGLER PIN, TJEK KODE
+  if (manglerPin) // MANGLER PIN, TJEK KODE
   {
     numpadLogik();
+  }
+
+  if (isLoggedIn)
+  {
+    inaktivitetTjek(); // >15 MIN, OK?
   }
 }

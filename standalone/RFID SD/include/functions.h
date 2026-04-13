@@ -233,6 +233,23 @@ bool tjekLogin(String fundetUID)
     return false;
 }
 
+void inaktivitetTjek() // LOG UD PGA INAKTIVITET
+{
+    if (millis() - tidStart > TIMER)
+    {
+        isLoggedIn = false;
+        indtastet = "";
+        tastet = "";
+        tft.fillRect(0, 120, 320, 50, SPIDER_BG);
+        tft.setTextColor(TFT_RED, SPIDER_BG);
+        tft.setTextDatum(MC_DATUM);
+        tft.drawString("INAKTIV: LOGGET UD", 160, 110, 1);
+        delay(2000);
+        nuStatus = "KLAR TIL SCAN";
+        Serial.println("logget ud pga inaktivitet");
+    }
+}
+
 void numpadLogik()
 {
     uint16_t talTrykket = numpad.touched();
@@ -306,7 +323,7 @@ void numpadLogik()
                 indtastet = "";
                 tastet = "";
                 tft.fillRect(0, 120, 320, 50, SPIDER_BG);
-                Serial.println("SLET");
+                Serial.print("SLET");
             }
 
             if (indtastet.length() > 4 && indtastet != korrektPin)
@@ -326,12 +343,13 @@ void numpadLogik()
                     indtastet = "";
                     tastet = "";
                     Serial.println("ADGANG GODKENDT");
+                    tidStart = millis();
                 }
                 else
                 {
                     Serial.println("FORKERT KODE!");
                     tft.fillRect(0, 120, 320, 50, SPIDER_BG);
-                    tft.drawString("FORKERT KODE!", 160, 135, 1);
+                    tft.drawString("FORKERT KODE!", 160, 140, 1);
                     delay(1000);
                     indtastet = "";
                     tastet = "";
@@ -343,19 +361,17 @@ void numpadLogik()
             {
                 tft.setTextColor(TFT_RED, SPIDER_BG);
                 tft.setTextDatum(MC_DATUM);
-                tft.drawString(tastet, 160, 135, 1);
+                tft.drawString(tastet, 160, 140, 1);
             }
             delay(250);
         }
     }
 }
 
-
-
 void opdaterScreen()
 {
     if (isLoggedIn)
-        nuStatus = "VELKOMMEN " + workerID;
+        nuStatus = "Logget ind: " + workerID;
     else if (manglerPin)
         nuStatus = "INDTAST PIN:";
     else if (waitforChip)
