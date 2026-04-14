@@ -1,13 +1,14 @@
 #ifndef VARIABLER_H
 #define VARIABLER_H
 
+#include <TFT_eSPI.h>
 #include <Arduino.h>
 #include <MFRC522.h>
 #include <SD.h>
 #include <config.h>
 #include <Wire.h>
 #include <Adafruit_MPR121.h>
-#include <TFT_eSPI.h>
+
 
 Adafruit_MPR121 numpad = Adafruit_MPR121();
 TFT_eSPI tft = TFT_eSPI();
