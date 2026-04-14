@@ -1,6 +1,6 @@
 Standalone
 
-This is part of the “Projekt Varierende PSU.”
+This is part of the “Projekt SMPS.”
 
 The project is developed using PlatformIO as the framework.
 
