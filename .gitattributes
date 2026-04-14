@@ -1,0 +1,19 @@
+# KiCad files managed by Git LFS with locking
+*.kicad_pcb filter=lfs diff=lfs merge=lfs -text lockable
+*.kicad_sch filter=lfs diff=lfs merge=lfs -text lockable
+*.kicad_pro filter=lfs diff=lfs merge=lfs -text lockable
+
+###############################################################################
+# Enforce LF line endings for all text files
+###############################################################################
+* text=auto eol=lf
+
+###############################################################################
+# KiCad source files (explicit, for safety)
+###############################################################################
+*.kicad_sch text eol=lf
+*.kicad_pcb text eol=lf
+*.kicad_pro text eol=lf
+*.kicad_sym text eol=lf
+*.kicad_mod text eol=lf
+*.kicad_prl text eol=lf

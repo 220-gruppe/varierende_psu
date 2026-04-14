@@ -3,3 +3,87 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+###############################################################################
+# KiCad temporary, backup, and cache files
+###############################################################################
+
+# Backup files
+*.bak
+*.bak.*
+*.tmp
+*.tmp.*
+*.svdbak
+*.lck
+
+# KiCad cache files
+*-cache.lib
+*-cache.kicad_sym
+fp-info-cache
+
+# Session / autosave files
+*.kicad_prl.bak
+*.kicad_sch-bak
+*.kicad_pcb-bak
+
+
+###############################################################################
+# KiCad outputs (usually regenerated, not source) ikke gældende
+###############################################################################
+
+# Plot and fabrication outputs
+#*.gbr
+#*.drl
+#*.pos
+#*.rpt
+#*.net
+
+# Drill files
+#*.xnc
+#*.drl.map
+
+# PDFs and plots (optional — remove if you want these tracked)
+# hardware/outputs/
+# outputs/
+
+
+###############################################################################
+# Simulation / external tool outputs
+###############################################################################
+
+*.raw
+*.wave
+*.log
+*.csv
+
+
+###############################################################################
+# Operating system junk
+###############################################################################
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+###############################################################################
+# IDE / editor junk
+###############################################################################
+
+.vscode/
+.idea/
+
+
+###############################################################################
+# Git LFS internal (never commit manually)
+###############################################################################
+
+*.lock
+.history
