@@ -136,8 +136,9 @@ void setupSPI()
     tft.init();
     tft.setRotation(1);
     tft.fillScreen(0xE6D6);
+    tft.setFreeFont(&FreeSansBold12pt7b);
     tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
-    tft.setTextSize(3);
+    tft.setTextSize(1);
     tft.setSwapBytes(true);
     tft.pushImage(35, 10, 250, 77, logo);
 

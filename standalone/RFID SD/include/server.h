@@ -47,7 +47,7 @@ void handleRoot()
 
   if (isLoggedIn)
   {
-    html += "<h1>Spider-feet</h1><hr>";
+    html += "<h1>Spider-feet</h1><hr>"; //EVT LAV LOGO HEADER
     html += "<h2>Velkommen, " + workerID + "</h2>";
     html += "<div class='status' style='background:#d4edda; color:#155724;'>Systemet er klar til svejsning...</div>";
     html += "<p>Data logges automatisk under arbejde.</p>";
