@@ -4,11 +4,11 @@ const int ledPin = 13;
 const int shuntPin = 12;
 const int freq = 50000;
 const int ledChannel = 0;
-const int resolution = 8;
+const int resolution = 9;
 
 // Regulator variabler
 float targetCurrentMA = 5.0; // ønsket strøm
-float currentDuty = 127.0;
+float currentDuty = 255.0;
 float Kp = 1.5; // styrke
 
 void setup()
@@ -33,11 +33,11 @@ void loop()
   float fejl = targetCurrentMA - currentMA; // hvor stor er fejlen
 
   currentDuty += fejl * Kp;
-  int currentdutyPct = round((currentDuty / 255.0) * 100);
+  int currentdutyPct = round((currentDuty / 512.0) * 100);te
 
   // grænseværdier for 0-100%
-  if (currentDuty > 255)
-    currentDuty = 255;
+  if (currentDuty > 512)
+    currentDuty = 512;
   if (currentDuty < 0)
     currentDuty = 0;
 
