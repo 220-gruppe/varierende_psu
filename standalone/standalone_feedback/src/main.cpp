@@ -53,4 +53,5 @@ void loop()
   Serial.println("%");
 
   delay(10); 
+  //Denne kommentar er super fucking vigtig, ellers kompiler lortet ikke
 }
