@@ -4,6 +4,8 @@
 #include <config.h>
 #include <functions.h>
 #include <server.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 String scannedUID = "";
 String workerID = "";
