@@ -1,13 +1,13 @@
 #include <Arduino.h>
 
-const int ledPin = 13;
+const int pwmPin = 13;
 const int shuntPin = 12;
 const int freq = 50000;
 const int ledChannel = 0;
 const int resolution = 9;
 
 // Regulator variabler
-float targetCurrentMA = 5.0; // ønsket strøm
+float targetCurrentMA = 2500.0; // ønsket strøm
 float currentDuty = 255.0;
 float Kp = 1.5; // styrke
 
@@ -15,7 +15,7 @@ void setup()
 {
   Serial.begin(115200);
   ledcSetup(ledChannel, freq, resolution);
-  ledcAttachPin(ledPin, ledChannel);
+  ledcAttachPin(pwmPin, ledChannel);
   analogSetAttenuation(ADC_0db);
 }
 
@@ -33,7 +33,7 @@ void loop()
   float fejl = targetCurrentMA - currentMA; // hvor stor er fejlen
 
   currentDuty += fejl * Kp;
-  int currentdutyPct = round((currentDuty / 512.0) * 100);te
+  int currentdutyPct = round((currentDuty / 512.0) * 100);
 
   // grænseværdier for 0-100%
   if (currentDuty > 512)
@@ -53,5 +53,4 @@ void loop()
   Serial.println("%");
 
   delay(10); 
-  //Denne kommentar er super fucking vigtig, ellers kompiler lortet ikke
 }
