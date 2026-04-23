@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 const int pwmPin = 10;
+const int sdPin = 12;
 const int shuntPin = 13;
 const int freq = 50000;
 const int ledChannel = 0;
