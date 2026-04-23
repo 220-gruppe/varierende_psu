@@ -1,7 +1,7 @@
 {
   "board": {
-    "active_layer": 25,
-    "active_layer_preset": "All Layers",
+    "active_layer": 0,
+    "active_layer_preset": "",
     "auto_track_width": true,
     "hidden_netclasses": [],
     "hidden_nets": [],
@@ -92,25 +92,16 @@
       9
     ],
     "col_widths": [
-      162,
-      147,
-<<<<<<< HEAD
-      149,
+      294,
+      279,
+      173,
       120,
-      129,
-      152,
-      132,
+      173,
+      173,
+      173,
       126,
-=======
-      103,
-      104,
-      91,
-      96,
-      92,
-      73,
->>>>>>> 6052d28e9536d2998202a4762d0468e0f03b3d46
-      91,
-      91
+      173,
+      173
     ],
     "custom_group_rules": [],
     "expanded_rows": [],
