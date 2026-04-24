@@ -8,7 +8,7 @@ const int ledChannel = 0;
 const int resolution = 9;
 
 // Regulator variabler
-float targetCurrentMA = 1000.0; // ønsket strøm
+float targetCurrentMA = 1500.0; // ønsket strøm
 float currentDuty = 255.0;
 float Kp = 0.1; // styrke
 
