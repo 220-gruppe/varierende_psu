@@ -1,0 +1,178 @@
+(footprint "R_Axial_DIN0922_L20.0mm_D9.0mm_P25.40mm_Horizontal"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "Resistor, Axial_DIN0922 series, Axial, Horizontal, pin pitch=25.4mm, 5W, length*diameter=20*9mm^2, http://www.vishay.com/docs/20128/wkxwrx.pdf")
+	(tags "Resistor Axial_DIN0922 series Axial Horizontal pin pitch 25.4mm 5W length 20mm diameter 9mm")
+	(property "Reference" "REF**"
+		(at 12.7 -5.62 0)
+		(layer "F.SilkS")
+		(uuid "59d94c5a-30b1-4336-962a-168ef024ff81")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "R_Axial_DIN0922_L20.0mm_D9.0mm_P25.40mm_Horizontal"
+		(at 12.7 5.62 0)
+		(layer "F.Fab")
+		(uuid "7c83adc5-36a2-4b3a-8c26-4baecf38c7c7")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "1d4c040d-cc71-4c2d-8f15-062c544aa5ca")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "ac6f7457-9f5e-468f-b8d3-fe493026026e")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "KiLib_Generator" "resistor/THT"
+		(at 0 0 0)
+		(layer "F.SilkS")
+		(hide yes)
+		(uuid "42038351-26ae-4e31-ae56-008a106e2063")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start 1.44 0)
+		(end 2.58 0)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "4515254b-1618-4476-9226-1fac20f0d6e5")
+	)
+	(fp_line
+		(start 23.96 0)
+		(end 22.82 0)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "e9c5902b-8066-4a39-9cc8-ff2d673a7cbe")
+	)
+	(fp_rect
+		(start 2.58 -4.62)
+		(end 22.82 4.62)
+		(stroke
+			(width 0.12)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "c6f66b74-1d70-47f3-a45f-499a441ee31b")
+	)
+	(fp_rect
+		(start -1.45 -4.75)
+		(end 26.85 4.75)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "ab4a12cf-463c-4e11-84b8-1205f3a6e2b8")
+	)
+	(fp_line
+		(start 0 0)
+		(end 2.7 0)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "d4286bc1-f795-4e01-a14c-5f44e61e061d")
+	)
+	(fp_line
+		(start 25.4 0)
+		(end 22.7 0)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "24a8c5b8-5c7a-4bd6-87ef-95134b1a0a2e")
+	)
+	(fp_rect
+		(start 2.7 -4.5)
+		(end 22.7 4.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "09bcf11d-1099-4f3c-aec4-a818d32e4ac0")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 12.7 0 0)
+		(layer "F.Fab")
+		(uuid "44d76559-ae99-465c-bbd8-cbce08f0867b")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" thru_hole circle
+		(at 2.9 0)
+		(size 2.4 2.4)
+		(drill 1.2)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "4f3b779f-e735-4be9-9bbf-91a0231017a8")
+	)
+	(pad "2" thru_hole circle
+		(at 25.4 0)
+		(size 2.4 2.4)
+		(drill 1.2)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "c2b62fcc-84f1-4fe1-b7f1-f7b1d8a62efb")
+	)
+	(embedded_fonts no)
+	(model "${KICAD10_3DMODEL_DIR}/Resistor_THT.3dshapes/R_Axial_DIN0922_L20.0mm_D9.0mm_P25.40mm_Horizontal.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)
