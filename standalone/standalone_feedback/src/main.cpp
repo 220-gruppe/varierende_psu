@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-const int pwmPin = 10;
+const int pwmPin = 12;
 const int shutdown = 11;
 const int shuntPin = 13;
 const int freq = 50000;
