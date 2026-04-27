@@ -1,0 +1,5 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "IRF2807ZPBF") (type "KiCad") (uri "C:/Users/johan/Desktop/Universitet/2. semester/2. semesterprojekt/varierende_psu/hardware/components/IRF2807ZPBF.pretty") (options "") (descr ""))
+	(lib (name "IRF2807ZPBF") (type "KiCad") (uri "C:/Users/johan/Desktop/Universitet/2. semester/2. semesterprojekt/varierende_psu/hardware/components/IRF2807ZPBF.pretty") (options "") (descr ""))
+)
