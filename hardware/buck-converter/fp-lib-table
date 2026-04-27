@@ -5,4 +5,5 @@
 	(lib (name "IRF2807ZPBF") (type "KiCad") (uri "${KIPRJMOD}/../components/IRF2807ZPBF/IRF2807ZPBF.pretty") (options "") (descr ""))
 	(lib (name "AD620") (type "KiCad") (uri "${KIPRJMOD}/../components/AD620/AD620.pretty") (options "") (descr ""))
 	(lib (name "ESP32_S3") (type "KiCad") (uri "${KIPRJMOD}/../components/ESP32_S3/ESP32_S3.pretty") (options "") (descr ""))
+	(lib (name "LM2596_breakout") (type "KiCad") (uri "C:/Users/johan/Desktop/Universitet/2. semester/2. semesterprojekt/varierende_psu/hardware/components/LM2596_breakout/LM2596_breakout.pretty") (options "") (descr ""))
 )
