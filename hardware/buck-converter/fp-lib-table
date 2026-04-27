@@ -1,4 +1,8 @@
 (fp_lib_table
 	(version 7)
-	(lib (name "ESP32") (type "KiCad") (uri "${KIPRJMOD}/Libraries/ESP32_S3/S3_footprint.pretty") (options "") (descr ""))
+	(lib (name "Library") (type "KiCad") (uri "C:/Users/jeppe/AAU/P.2/varierende_psu/hardware/components/Effekt_modstand/Library.pretty") (options "") (descr ""))
+	(lib (name "Effekt_modstand") (type "KiCad") (uri "C:/Users/jeppe/AAU/P.2/varierende_psu/hardware/components/Effekt_modstand/Effekt_modstand.pretty") (options "") (descr ""))
+	(lib (name "IR2104") (type "KiCad") (uri "C:/Users/jeppe/AAU/P.2/varierende_psu/hardware/components/IR2104/IR2104.pretty") (options "") (descr ""))
+	(lib (name "IRF2807ZPBF") (type "KiCad") (uri "C:/Users/jeppe/AAU/P.2/varierende_psu/hardware/components/IRF2807ZPBF/IRF2807ZPBF.pretty") (options "") (descr ""))
+	(lib (name "S3_footprint") (type "KiCad") (uri "C:/Users/jeppe/AAU/P.2/varierende_psu/hardware/components/ESP32_S3/S3_footprint.pretty") (options "") (descr ""))
 )
