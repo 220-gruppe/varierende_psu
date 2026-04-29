@@ -1,0 +1,80 @@
+@startuml
+title Web Interface Subsystem - Focused View
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+
+actor "Phone User" as User
+
+rectangle "Web Interface Subsystem" {
+
+  package "Periodic Web Task" <<task>> {
+    component "serverTask()\nperiod: 10 ms\npriority: 1\ncore: 0" as ServerTask
+  }
+
+  package "HTTP Server" {
+    component "WebServer server(80)\nhandleClient()" as WebServer
+  }
+
+  package "Routes / Pages" {
+    component "handleRoot()\nmain page" as RootPage
+    component "handleOpretSide()\ncreate-user page" as CreatePage
+    component "handleGemLogin()\nstore form input" as SaveLogin
+    component "handleVerificerPin()\nverify PIN" as VerifyPin
+    component "handleCheckStatus()\nstatus polling" as CheckStatus
+    component "handleLogout()\nlogout" as Logout
+    component "handleResetFile()\nreset users" as ResetFile
+  }
+
+  package "Shared State" {
+    component "Global variables\nisLoggedIn\nmanglerPin\nwaitforChip\nworkerID\nkorrektPin\ntempNavn\ntempPin" as Globals
+  }
+
+  database "SD card\nlogins.csv\ndokumentation.csv" as SDStore
+}
+
+package "Network / External" {
+  component "WiFi SoftAP" as WiFiAP
+  component "Browser UI\nHTML + JS polling" as Browser
+}
+
+User --> Browser : opens webpage
+Browser --> WiFiAP : HTTP requests
+WiFiAP --> WebServer
+ServerTask --> WebServer : periodic polling
+
+WebServer --> RootPage
+WebServer --> CreatePage
+WebServer --> SaveLogin
+WebServer --> VerifyPin
+WebServer --> CheckStatus
+WebServer --> Logout
+WebServer --> ResetFile
+
+RootPage --> Globals : read status/login state
+CreatePage --> SaveLogin : submit form
+SaveLogin --> Globals : write temp user data
+VerifyPin --> Globals : read/write login state
+CheckStatus --> Globals : read state
+Logout --> Globals : clear login state
+ResetFile --> SDStore : delete/recreate files
+
+VerifyPin --> Browser : redirect / response
+CheckStatus --> Browser : plain-text state
+RootPage --> Browser : HTML page
+CreatePage --> Browser : HTML form
+Logout --> Browser : redirect
+ResetFile --> Browser : redirect
+
+note bottom of Browser
+The root page uses JavaScript polling
+to call /checkStatus every second.
+end note
+
+note bottom of WebServer
+The web subsystem provides a simple
+HTTP interface over the local WiFi AP.
+end note
+
+@enduml

@@ -1,0 +1,91 @@
+@startuml
+title Varierende PSU - GOMAA-inspired Subsystem Chart
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+skinparam ArrowThickness 1
+
+actor Operator
+actor "Phone User" as PhoneUser
+
+rectangle "Varierende PSU System" {
+
+  package "Control Subsystem" <<subsystem>> as Control {
+    component "pwmTask()\n- Current measurement\n- P control\n- LEDC/PWM output" as PWMTask
+  }
+
+  package "Interface Subsystem" <<subsystem>> as Interface {
+    component "interfaceTask()\n- Screen update\n- RFID scan\n- PIN handling\n- Inactivity check" as UITask
+  }
+
+  package "Web Subsystem" <<subsystem>> as Web {
+    component "serverTask()\n- handleClient()\n- Login pages\n- User creation\n- Status polling" as ServerTask
+  }
+
+  package "Storage Subsystem" <<subsystem>> as Storage {
+    database "SD card\nlogins.csv\ndokumentation.csv" as SDStore
+  }
+
+  package "Shared State" <<subsystem>> as SharedState {
+    component "Global variables\nworkerID\nmanglerPin\nisLoggedIn\nkorrektPin\nwaitforChip\ncurrentDuty" as Globals
+  }
+}
+
+package "Hardware" {
+  component "PWM power stage" as PowerStage
+  component "Shunt / ADC input" as Shunt
+  component "TFT display" as TFT
+  component "RFID reader" as RFID
+  component "Capacitive keypad" as Keypad
+  component "WiFi AP + HTTP client" as WiFiClient
+}
+
+Operator --> TFT : sees status
+Operator --> RFID : presents tag
+Operator --> Keypad : enters PIN
+PhoneUser --> WiFiClient : browser access
+
+UITask --> TFT : updates UI
+UITask --> RFID : reads UID
+UITask --> Keypad : reads PIN
+UITask --> Globals : reads/writes
+UITask --> SDStore : login lookup / log data
+
+ServerTask --> WiFiClient : HTTP service
+ServerTask --> Globals : reads/writes
+ServerTask --> SDStore : create/reset users
+
+PWMTask --> Shunt : reads current
+PWMTask --> PowerStage : sets PWM duty
+PWMTask --> Globals : reads/writes
+
+SDStore -up-> Storage
+TFT -up-> Interface
+RFID -up-> Interface
+Keypad -up-> Interface
+Shunt -up-> Control
+PowerStage -up-> Control
+WiFiClient -up-> Web
+
+note bottom of SharedState
+Subsystems communicate mainly through
+shared global state variables.
+end note
+
+note bottom of Control
+Highest-priority periodic task
+(currently 10 ms period).
+end note
+
+note bottom of Interface
+Periodic task for local interaction
+and access control.
+end note
+
+note bottom of Web
+Periodic server polling task on
+the second core.
+end note
+
+@enduml

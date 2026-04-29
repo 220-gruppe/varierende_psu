@@ -1,15 +1,35 @@
-// egne libraries
-#include <logo.h>
-#include <variabler.h>
-#include <config.h>
-#include <functions.h>
-#include <server.h>
+// freeRTOS
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "driver/ledc.h"
+
+// PWM
+#include <driver/ledc.h>
+
+// Include
+#include "logo.h"
+#include "server.h"
+#include "pwm.h"
+#include "numpad.h"
+#include "auth.h"
+#include "rfid.h"
+#include "screen.h"
+#include ""
+
+// SPI
+#define SPI_MISO 11
+#define SPI_MOSI 13
+#define SPI_SCK 12
+
+// I2C
+#define I2C_SDA 21
+#define I2C_SCL 16
+
+// BUTTONS
+#define BUTTON_PIN 3
+
+String workerID;
 
 String scannedUID = "";
-String workerID = "";
 float heatInput = 70000;   // aendres til noget fra sensor
 uint32_t mellemLog = 0;    // aendres til reelt tidspunkt
 int counter = 0;           // blot en counter til antal
@@ -40,6 +60,23 @@ unsigned long tidStart = 0;
 TaskHandle_t interfaceT = nullptr;
 TaskHandle_t serverT = nullptr;
 TaskHandle_t pwmT = nullptr;
+
+void inaktivitetTjek() // LOG UD PGA INAKTIVITET
+{
+    if (millis() - tidStart > TIMER)
+    {
+        isLoggedIn = false;
+        indtastet = "";
+        tastet = "";
+        tft.fillRect(0, 120, 320, 50, SPIDER_BG);
+        tft.setTextColor(TFT_RED, SPIDER_BG);
+        tft.setTextDatum(MC_DATUM);
+        tft.drawString("INAKTIV: LOGGET UD", 160, 110, 1);
+        delay(2000);
+        nuStatus = "KLAR TIL SCAN";
+        Serial.println("logget ud pga inaktivitet");
+    }
+}
 
 void pwmTask(void *pvParameters)
 {
@@ -125,9 +162,13 @@ void setup()
   delay(1500);
   Serial.println("Boot startet");
 
-  setupSPI();
-  createFile();
-  setupPwm();
+  // Start SPI
+  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+
+  // START I2C SDA, SCL
+  Wire.begin(I2C_SDA, I2C_SCL);
+
+  setupDatabase();
 
   Serial.println("Starter tasks");
 
