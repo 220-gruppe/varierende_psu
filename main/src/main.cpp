@@ -25,37 +25,11 @@
 #define I2C_SDA 21
 #define I2C_SCL 16
 
-// BUTTONS
-#define BUTTON_PIN 3
-
-String workerID;
-
 String scannedUID = "";
 float heatInput = 70000;   // aendres til noget fra sensor
-uint32_t mellemLog = 0;    // aendres til reelt tidspunkt
-int counter = 0;           // blot en counter til antal
-SvejseLog aktuelSvejsning; // instans af struct
-File svejsningData;        // instans af sdkort
-File logins;               // instans af sdkort
-
 float targetCurrentMA = 5.0;
 float currentDuty = 0.0;
 float Kp = 1.1;
-
-String tempNavn = "";
-String tempPin = "";
-String tempUID = "";
-bool waitforChip = false;
-
-bool manglerPin = false;
-bool isLoggedIn = false;
-String indtastet = "";
-bool ikkeKodet = false;
-String nuStatus = "";
-String tastet = "";
-String korrektPin = "";
-String sidsteStatus = "";
-
 unsigned long tidStart = 0;
 
 TaskHandle_t interfaceT = nullptr;

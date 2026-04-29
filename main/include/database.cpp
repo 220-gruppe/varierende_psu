@@ -90,7 +90,7 @@ bool write(const String &data)
     return true;
 }
 
-bool search(const String &query, String &result)
+bool databaseSearch(const String &query, String &result)
 {
     if (currentDB.length() == 0)
     {

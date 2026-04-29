@@ -1,5 +1,7 @@
 #include "screen.h"
 
+TFT_eSPI tft = TFT_eSPI();
+
 void setupScreen(){
     pinMode(15, OUTPUT);
     digitalWrite(15, HIGH);
@@ -13,9 +15,16 @@ void setupScreen(){
     tft.pushImage(35, 10, 250, 77, logo);
 }
 
-void opdaterScreen()
+void clearScreen(){
+    tft.fillRect(0, 120, 320, 50, SPIDER_BG);
+}
+
+void opdaterScreen(String interface)
 {
-    if (isLoggedIn)
+    switch (interface) {
+       case "" 
+    }
+    if (authStatus())
         nuStatus = "Logget ind: " + workerID;
     else if (manglerPin)
         nuStatus = "INDTAST PIN:";
@@ -28,8 +37,7 @@ void opdaterScreen()
     else
         nuStatus = "KLAR TIL SCAN";
 
-    if (nuStatus != sidsteStatus)
-    {
+    if (nuStatus == sidsteStatus) { return; }
 
         tft.fillRect(0, 97, 320, 222, SPIDER_BG);
 
@@ -48,5 +56,4 @@ void opdaterScreen()
             tft.drawString(nuStatus, 160, 110, 1);
         }
         sidsteStatus = nuStatus;
-    }
 }

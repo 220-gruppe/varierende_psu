@@ -7,11 +7,7 @@
 #define RFID_SDA 2
 #define RFID_RST 1
 
-MFRC522 rc;
+String scanUID();
 
-rc.PCD_Init();
-
-void searchUID();
-void scanCard();
 
 #endif

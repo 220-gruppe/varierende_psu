@@ -1,10 +1,14 @@
 #include "rfid.h"
 
+
+MFRC522 rc;
+
 void setupRFID(){
     pinMode(RFID_SDA, OUTPUT);
+    rc.PCD_Init();
 }
 
-String searchUID()
+String scanUID()
 { 
     String scannedUID;
     bool fundet;
@@ -32,26 +36,4 @@ String searchUID()
     
     Serial.print("Kort-UID fundet: ");
     Serial.println(scannedUID);
-}
-
-String scanCard()
-{
-    if (!isLoggedIn)
-    {
-        if (rc.PICC_IsNewCardPresent() && rc.PICC_ReadCardSerial())
-        {
-            String fundetUID = "";
-            for (byte i = 0; i < rc.uid.size; i++)
-            {
-                fundetUID += (rc.uid.uidByte[i] < 0x10 ? "0" : "");
-                fundetUID += String(rc.uid.uidByte[i], HEX);
-            }
-            fundetUID.toUpperCase();
-
-            rc.PICC_HaltA();
-            rc.PCD_StopCrypto1();
-
-            return fundetUID;
-        }
-    }
 }
