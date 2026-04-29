@@ -1,6 +1,7 @@
 // freeRTOS
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "driver/ledc.h"
 
 // PWM
 #include <driver/ledc.h>
