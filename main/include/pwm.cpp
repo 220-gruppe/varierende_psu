@@ -1,5 +1,11 @@
 #include "pwm.h"
 
+namespace
+{
+float currentDuty = 0.0f;
+unsigned long lastPrint = 0;
+}
+
 void setupPwm()
 {
   pinMode(PWM_GPIO, OUTPUT);
@@ -24,4 +30,48 @@ void setupPwm()
   channel_cfg.duty = 0;
   channel_cfg.hpoint = 0;
   ESP_ERROR_CHECK(ledc_channel_config(&channel_cfg));
+}
+
+void pwmControlStep(float targetCurrentMA, float kp)
+{
+  const uint32_t pwmMaxDuty = (1UL << PWM_RESOLUTION) - 1;
+  uint32_t sumMV = 0;
+
+  for (int i = 0; i < 50; i++)
+  {
+    sumMV += analogReadMilliVolts(SHUNT_PIN);
+  }
+
+  float shuntVoltageMV = sumMV / 50.0f;
+  float currentMA = shuntVoltageMV / SHUNT_RESISTOR_OHM;
+  float fejl = targetCurrentMA - currentMA;
+
+  currentDuty += fejl * kp;
+
+  if (currentDuty > pwmMaxDuty)
+  {
+    currentDuty = pwmMaxDuty;
+  }
+
+  if (currentDuty < 0)
+  {
+    currentDuty = 0;
+  }
+
+  ledc_set_duty(PWM_MODE, PWM_CHANNEL, static_cast<uint32_t>(currentDuty));
+  ledc_update_duty(PWM_MODE, PWM_CHANNEL);
+
+  if (millis() - lastPrint > 500)
+  {
+    lastPrint = millis();
+    int currentDutyPct = round((currentDuty / pwmMaxDuty) * 100);
+
+    Serial.print("Target: ");
+    Serial.print(targetCurrentMA);
+    Serial.print("mA | Current: ");
+    Serial.print(currentMA);
+    Serial.print("mA | PWM Duty: ");
+    Serial.print(currentDutyPct);
+    Serial.println("%");
+  }
 }

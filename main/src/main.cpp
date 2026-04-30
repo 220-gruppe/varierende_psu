@@ -2,6 +2,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "driver/ledc.h"
+#include <SPI.h>
+#include <Wire.h>
 
 // PWM
 #include <driver/ledc.h>
@@ -14,7 +16,6 @@
 #include "auth.h"
 #include "rfid.h"
 #include "screen.h"
-#include ""
 
 // SPI
 #define SPI_MISO 11
@@ -25,12 +26,15 @@
 #define I2C_SDA 21
 #define I2C_SCL 16
 
-String scannedUID = "";
 float heatInput = 70000;   // aendres til noget fra sensor
 float targetCurrentMA = 5.0;
-float currentDuty = 0.0;
 float Kp = 1.1;
 unsigned long tidStart = 0;
+
+namespace
+{
+constexpr unsigned long INACTIVITY_TIMEOUT_MS = 30000;
+}
 
 TaskHandle_t interfaceT = nullptr;
 TaskHandle_t serverT = nullptr;
@@ -38,64 +42,23 @@ TaskHandle_t pwmT = nullptr;
 
 void inaktivitetTjek() // LOG UD PGA INAKTIVITET
 {
-    if (millis() - tidStart > TIMER)
+    if (authStatus() && millis() - tidStart > INACTIVITY_TIMEOUT_MS)
     {
-        isLoggedIn = false;
-        indtastet = "";
-        tastet = "";
-        tft.fillRect(0, 120, 320, 50, SPIDER_BG);
-        tft.setTextColor(TFT_RED, SPIDER_BG);
-        tft.setTextDatum(MC_DATUM);
-        tft.drawString("INAKTIV: LOGGET UD", 160, 110, 1);
-        delay(2000);
-        nuStatus = "KLAR TIL SCAN";
+        logout();
+        resetNumpad();
+        screenReady();
+        screenInactiveLogout();
         Serial.println("logget ud pga inaktivitet");
     }
 }
 
 void pwmTask(void *pvParameters)
 {
-  const uint32_t pwmMaxDuty = (1UL << PWM_RESOLUTION) - 1;
-  uint32_t lastPrint = 0;
   TickType_t lastWake = xTaskGetTickCount();
 
   for (;;)
   {
-    uint32_t sumMV = 0;
-
-    for (int i = 0; i < 50; i++)
-    {
-      sumMV += analogReadMilliVolts(SHUNT_PIN);
-    }
-
-    float shuntVoltageMV = sumMV / 50.0;
-    float currentMA = shuntVoltageMV / SHUNT_RESISTOR_OHM;
-    float fejl = targetCurrentMA - currentMA;
-
-    currentDuty += fejl * Kp;
-
-    // PWM_RESOLUTION er 8-bit, saa duty skal ligge mellem 0 og 255.
-    if (currentDuty > pwmMaxDuty)
-      currentDuty = pwmMaxDuty;
-    if (currentDuty < 0)
-      currentDuty = 0;
-
-    ledc_set_duty(PWM_MODE, PWM_CHANNEL, (uint32_t)currentDuty);
-    ledc_update_duty(PWM_MODE, PWM_CHANNEL);
-
-    if (millis() - lastPrint > 500)
-    {
-      lastPrint = millis();
-      int currentDutyPct = round((currentDuty / pwmMaxDuty) * 100);
-
-      Serial.print("Target: ");
-      Serial.print(targetCurrentMA);
-      Serial.print("mA | Current: ");
-      Serial.print(currentMA);
-      Serial.print("mA | PWM Duty: ");
-      Serial.print(currentDutyPct);
-      Serial.println("%");
-    }
+    pwmControlStep(targetCurrentMA, Kp);
 
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
@@ -107,14 +70,78 @@ void interfaceTask(void *pvParameters)
 
   for (;;)
   {
-    opdaterScreen();
-    kortScan();
+    String scannedUID = scanUID();
+    AuthState state = authState();
 
-    if (manglerPin)
+    if (state == AuthState::WaitingForChip)
+    {
+      screenScanNewChip();
+
+      if (scannedUID.length() > 0)
+      {
+        if (completePendingUserCreation(scannedUID))
+        {
+          resetNumpad();
+          screenReady();
+          Serial.println("Ny bruger oprettet");
+        }
+        else
+        {
+          screenReady();
+          screenUnknownChip();
+        }
+      }
+    }
+    else if (state == AuthState::WaitingForPin)
+    {
+      screenEnterPin();
       numpadLogik();
 
-    if (isLoggedIn)
+      if (isUserDone())
+      {
+        if (authUser(getTyped()))
+        {
+          screenLoggedIn(currentUserName());
+          resetNumpad();
+          Serial.println("ADGANG GODKENDT");
+        }
+        else
+        {
+          screenEnterPin();
+          screenWrongPin();
+          clearTyped();
+          resetUserDone();
+          Serial.println("FORKERT KODE!");
+        }
+      }
+    }
+    else if (authStatus())
+    {
+      screenLoggedIn(currentUserName());
       inaktivitetTjek();
+    }
+    else
+    {
+      if (scannedUID.length() > 0)
+      {
+        if (loadUserByUID(scannedUID))
+        {
+          resetNumpad();
+          screenEnterPin();
+        }
+        else
+        {
+          screenReady();
+          screenUnknownChip();
+        }
+      }
+      else
+      {
+        screenReady();
+      }
+    }
+
+    drawScreen();
 
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
@@ -126,7 +153,7 @@ void serverTask(void *pvParameters)
 
   for (;;)
   {
-    server.handleClient();
+    processServer();
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
@@ -144,6 +171,12 @@ void setup()
   Wire.begin(I2C_SDA, I2C_SCL);
 
   setupDatabase();
+  setupAuth();
+  setupPwm();
+  setupRFID();
+  setupNumpad();
+  setupScreen();
+  setupServer();
 
   Serial.println("Starter tasks");
 
