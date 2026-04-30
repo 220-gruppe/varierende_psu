@@ -99,7 +99,8 @@ void showProgramMenu()
     tft.setTextSize(2);
     tft.setTextDatum(MC_DATUM);
     tft.drawString("Temp: " + String(AVG_TEMP, 1) + " C", 160, 40);
-    tft.drawString("Vaelg program med 0, godkend med #:", 160, 65);
+    tft.drawString("Vaelg program med 0", 160, 55);
+    tft.drawString("Godkend med #", 160, 70);
     int startY = 95;
     int spacing = 18;
 
@@ -362,7 +363,7 @@ void StateMachine()
             tft.setTextSize(2);
             tft.setTextDatum(MC_DATUM);
             tft.drawString("Tryk * for ny svejsning, ", 160, 70);
-            tft.drawString("eller 1 for at afslut og logud", 160, 110);
+            tft.drawString("1 for afslut og logud", 160, 110);
             screenDrawn = true;
         }
         if (buttonPressed(buttonMeasure))
