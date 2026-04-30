@@ -1,9 +1,10 @@
 #include "screen.h"
-
-TFT_eSPI tft = TFT_eSPI();
+#include "auth.h"
 
 namespace
 {
+TFT_eSPI tft = TFT_eSPI();
+
 constexpr int LOGO_X = 35;
 constexpr int LOGO_Y = 10;
 constexpr int LOGO_WIDTH = 250;
@@ -15,16 +16,14 @@ constexpr unsigned long ERROR_TIME_MS = 1500;
 constexpr unsigned long LOGOUT_TIME_MS = 2000;
 
 ScreenState currentState = ScreenState::Ready;
+ScreenState baseState = ScreenState::Ready;
 ScreenState lastDrawnState = ScreenState::Ready;
-ScreenState returnState = ScreenState::Ready;
 
-String currentName = "";
-String lastDrawnName = "";
 String pinText = "";
 String lastDrawnPin = "";
 
 bool needsRedraw = true;
-unsigned long stateTimeout = 0;
+unsigned long temporaryStateUntil = 0;
 
 int screenCenterX()
 {
@@ -37,11 +36,18 @@ int contentHeight()
     return height > 0 ? height : 0;
 }
 
-bool isTemporaryState(ScreenState state)
+unsigned long temporaryDuration(ScreenState state)
 {
-    return state == ScreenState::UnknownChip ||
-           state == ScreenState::WrongPin ||
-           state == ScreenState::InactiveLogout;
+    switch (state)
+    {
+    case ScreenState::InactiveLogout:
+        return LOGOUT_TIME_MS;
+    case ScreenState::UnknownChip:
+    case ScreenState::WrongPin:
+        return ERROR_TIME_MS;
+    default:
+        return 0;
+    }
 }
 
 void drawLogo()
@@ -57,18 +63,6 @@ void drawCenteredStatus(const String &text, uint16_t color, int y = STATUS_Y)
     tft.drawString(text, screenCenterX(), y, 1);
 }
 
-String maskPin(const String &typedPin)
-{
-    String masked = "";
-
-    for (size_t i = 0; i < typedPin.length(); i++)
-    {
-        masked += "*";
-    }
-
-    return masked;
-}
-
 void drawReady()
 {
     drawCenteredStatus("KLAR TIL SCAN", SPIDER_BLUE);
@@ -76,7 +70,7 @@ void drawReady()
 
 void drawLoggedIn()
 {
-    drawCenteredStatus("Logget ind: " + currentName, SPIDER_BLUE);
+    drawCenteredStatus("Logget ind: " + currentUserName(), SPIDER_BLUE);
 }
 
 void drawEnterPin()
@@ -105,52 +99,56 @@ void drawInactiveLogout()
     drawCenteredStatus("INAKTIV: LOGGET UD", TFT_RED);
 }
 
-void changeState(ScreenState state, const String &name = "")
+void clearScreen()
 {
-    bool changed = currentState != state || currentName != name;
+    tft.fillRect(0, CONTENT_TOP, tft.width(), contentHeight(), SPIDER_BG);
+}
 
-    currentState = state;
-    currentName = name;
-    stateTimeout = 0;
+void applyState(ScreenState state)
+{
+    bool changedBaseState = baseState != state;
+    baseState = state;
 
     if (state != ScreenState::EnterPin)
     {
         pinText = "";
     }
 
-    if (changed)
+    if (temporaryStateUntil != 0)
+    {
+        return;
+    }
+
+    bool changedCurrentState = currentState != baseState;
+    currentState = baseState;
+    temporaryStateUntil = 0;
+
+    if (changedCurrentState || changedBaseState)
     {
         needsRedraw = true;
     }
 }
 
-void changeTemporaryState(ScreenState state, unsigned long showTimeMs)
+void updatePinPreview(const String &typedPin)
 {
-    if (!isTemporaryState(currentState))
+    String hiddenPin = "";
+
+    for (size_t i = 0; i < typedPin.length(); i++)
     {
-        returnState = currentState;
+        hiddenPin += "*";
     }
 
-    currentState = state;
-    stateTimeout = millis() + showTimeMs;
-    needsRedraw = true;
-}
-
-void handleTimeout()
-{
-    if (stateTimeout == 0)
+    if (pinText == hiddenPin)
     {
         return;
     }
 
-    if ((long)(millis() - stateTimeout) < 0)
-    {
-        return;
-    }
+    pinText = hiddenPin;
 
-    currentState = returnState;
-    stateTimeout = 0;
-    needsRedraw = true;
+    if (currentState == ScreenState::EnterPin || baseState == ScreenState::EnterPin)
+    {
+        needsRedraw = true;
+    }
 }
 }
 
@@ -170,85 +168,44 @@ void setupScreen()
     drawScreen();
 }
 
-void clearScreen()
-{
-    tft.fillRect(0, CONTENT_TOP, tft.width(), contentHeight(), SPIDER_BG);
-}
-
-void clearPinArea()
-{
-    tft.fillRect(0, 120, tft.width(), tft.height() - 120, SPIDER_BG);
-}
-
-void screenReady()
-{
-    changeState(ScreenState::Ready);
-}
-
-void screenLoggedIn(const String &name)
-{
-    changeState(ScreenState::LoggedIn, name);
-}
-
-void screenEnterPin()
-{
-    changeState(ScreenState::EnterPin);
-}
-
-void screenScanNewChip()
-{
-    changeState(ScreenState::ScanNewChip);
-}
-
-void screenUnknownChip()
-{
-    changeTemporaryState(ScreenState::UnknownChip, ERROR_TIME_MS);
-}
-
-void screenWrongPin()
-{
-    changeTemporaryState(ScreenState::WrongPin, ERROR_TIME_MS);
-}
-
-void screenInactiveLogout()
-{
-    changeTemporaryState(ScreenState::InactiveLogout, LOGOUT_TIME_MS);
-}
-
 void setScreenState(ScreenState state)
 {
-    changeState(state);
+    applyState(state);
+}
+
+void showTemporaryScreen(ScreenState state)
+{
+    unsigned long duration = temporaryDuration(state);
+
+    if (duration == 0)
+    {
+        applyState(state);
+        return;
+    }
+
+    currentState = state;
+    temporaryStateUntil = millis() + duration;
+    needsRedraw = true;
 }
 
 void screenPinPreview(const String &typedPin)
 {
-    drawPinInput(maskPin(typedPin));
-}
-
-void drawPinInput(const String &maskedPin)
-{
-    if (pinText == maskedPin)
-    {
-        return;
-    }
-
-    pinText = maskedPin;
-
-    if (currentState == ScreenState::EnterPin)
-    {
-        needsRedraw = true;
-    }
+    updatePinPreview(typedPin);
 }
 
 void drawScreen()
 {
-    handleTimeout();
+    if (temporaryStateUntil != 0 && (long)(millis() - temporaryStateUntil) >= 0)
+    {
+        currentState = baseState;
+        temporaryStateUntil = 0;
+        needsRedraw = true;
+    }
 
     bool sameState = currentState == lastDrawnState;
-    bool sameName = currentName == lastDrawnName;
     bool samePin = pinText == lastDrawnPin;
 
-    if (!needsRedraw && sameState && sameName && samePin)
+    if (!needsRedraw && sameState && samePin)
     {
         return;
     }
@@ -282,7 +239,6 @@ void drawScreen()
     }
 
     lastDrawnState = currentState;
-    lastDrawnName = currentName;
     lastDrawnPin = pinText;
     needsRedraw = false;
 }

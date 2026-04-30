@@ -6,6 +6,18 @@ namespace
 Adafruit_MPR121 numpad = Adafruit_MPR121();
 String typed = "";
 bool userDone = false;
+
+void applyTypedPreview()
+{
+    screenPinPreview(typed);
+}
+
+void clearTypedInput()
+{
+    typed = "";
+    userDone = false;
+    applyTypedPreview();
+}
 }
 
 void setupNumpad()
@@ -21,7 +33,7 @@ void setupNumpad()
 
     Serial.println("Den er fundet makker");
     numpad.setAutoconfig(true);
-    screenPinPreview(typed);
+    applyTypedPreview();
 }
 
 String getTyped()
@@ -34,21 +46,9 @@ bool isUserDone()
     return userDone;
 }
 
-void resetUserDone()
-{
-    userDone = false;
-}
-
-void clearTyped()
-{
-    typed = "";
-    userDone = false;
-    screenPinPreview(typed);
-}
-
 void resetNumpad()
 {
-    clearTyped();
+    clearTypedInput();
 }
 
 void numpadLogik()
@@ -122,7 +122,7 @@ void numpadLogik()
 
     if (clearRequested)
     {
-        clearTyped();
+        clearTypedInput();
         Serial.print("SLET");
     }
     else if (value.length() > 0)
@@ -131,7 +131,7 @@ void numpadLogik()
         {
             typed += value;
             userDone = false;
-            screenPinPreview(typed);
+            applyTypedPreview();
             Serial.print(value + " ");
         }
     }

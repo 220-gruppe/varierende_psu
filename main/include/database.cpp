@@ -20,6 +20,27 @@ String buildDbPath(const String &db)
 
     return path;
 }
+
+bool openCurrentDb(const char *mode, File &dbFile, const char *action)
+{
+    if (currentDB.length() == 0)
+    {
+        Serial.println("DB is not selected");
+        return false;
+    }
+
+    dbFile = SD.open(currentDB, mode);
+    if (!dbFile)
+    {
+        Serial.print("Failed to open database for ");
+        Serial.print(action);
+        Serial.print(": ");
+        Serial.println(currentDB);
+        return false;
+    }
+
+    return true;
+}
 }
 
 void setupDatabase(){
@@ -71,17 +92,9 @@ bool DB(const String &db, const String &columns)
 
 bool databaseWrite(const String &data)
 {
-    if (currentDB.length() == 0)
+    File dbFile;
+    if (!openCurrentDb(FILE_APPEND, dbFile, "write"))
     {
-        Serial.println("DB is not selected");
-        return false;
-    }
-
-    File dbFile = SD.open(currentDB, FILE_APPEND);
-    if (!dbFile)
-    {
-        Serial.print("Failed to open database for write: ");
-        Serial.println(currentDB);
         return false;
     }
 
@@ -92,18 +105,9 @@ bool databaseWrite(const String &data)
 
 bool databaseSearch(const String &query, String &result)
 {
-    if (currentDB.length() == 0)
+    File dbFile;
+    if (!openCurrentDb(FILE_READ, dbFile, "read"))
     {
-        Serial.println("DB is not selected");
-        result = "";
-        return false;
-    }
-
-    File dbFile = SD.open(currentDB, FILE_READ);
-    if (!dbFile)
-    {
-        Serial.print("Failed to open database for read: ");
-        Serial.println(currentDB);
         result = "";
         return false;
     }
@@ -125,4 +129,25 @@ bool databaseSearch(const String &query, String &result)
 
     dbFile.close();
     return false;
+}
+
+void databaseRead()
+{
+    File dbFile;
+    if (!openCurrentDb(FILE_READ, dbFile, "read"))
+    {
+        return;
+    }
+
+    Serial.print("Database content from ");
+    Serial.println(currentDB);
+
+    while (dbFile.available())
+    {
+        String line = dbFile.readStringUntil('\n');
+        line.trim();
+        Serial.println(line);
+    }
+
+    dbFile.close();
 }

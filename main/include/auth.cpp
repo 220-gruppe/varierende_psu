@@ -1,7 +1,5 @@
 #include "auth.h"
 
-extern unsigned long tidStart;
-
 namespace
 {
     String uid = "";
@@ -9,6 +7,7 @@ namespace
     String password = "";
     String pendingUser = "";
     String pendingPassword = "";
+    unsigned long lastAuthActivity = 0;
     AuthState currentState = AuthState::Ready;
 
     void clearLoadedUser()
@@ -62,26 +61,37 @@ namespace
         password.trim();
         return true;
     }
+
+    bool writeUserRecord(const String &newUid, const String &newUser, const String &newPassword)
+    {
+        if (newUid.length() == 0 || newUser.length() == 0 || newPassword.length() == 0)
+        {
+            return false;
+        }
+
+        uid = newUid;
+        user = newUser;
+        password = newPassword;
+
+        DB("users", "UID,USER,PASSWORD");
+        return databaseWrite(uid + "," + user + "," + password);
+    }
+
+    bool findUserLineByUid(const String &searchUid, String &userLine)
+    {
+        if (searchUid.length() == 0)
+        {
+            return false;
+        }
+
+        DB("users", "UID,USER,PASSWORD");
+        return databaseSearch(searchUid, userLine);
+    }
 }
 
 void setupAuth()
 {
     DB("users", "UID,USER,PASSWORD");
-}
-
-bool createUser(const String &newUid, const String &newUser, const String &newPassword)
-{
-    if (newUid.length() == 0 || newUser.length() == 0 || newPassword.length() == 0)
-    {
-        return false;
-    }
-
-    uid = newUid;
-    user = newUser;
-    password = newPassword;
-
-    DB("users", "UID,USER,PASSWORD");
-    return databaseWrite(uid + "," + user + "," + password);
 }
 
 bool beginPendingUserCreation(const String &newUser, const String &newPassword)
@@ -105,7 +115,7 @@ bool completePendingUserCreation(const String &newUid)
         return false;
     }
 
-    if (!createUser(newUid, pendingUser, pendingPassword))
+    if (!writeUserRecord(newUid, pendingUser, pendingPassword))
     {
         return false;
     }
@@ -116,22 +126,11 @@ bool completePendingUserCreation(const String &newUid)
     return true;
 }
 
-bool findUID(const String &searchUid, String &userLine)
-{
-    if (searchUid.length() == 0)
-    {
-        return false;
-    }
-
-    DB("users", "UID,USER,PASSWORD");
-    return databaseSearch(searchUid, userLine);
-}
-
 bool loadUserByUID(const String &searchUid)
 {
     String userLine;
 
-    if (!findUID(searchUid, userLine))
+    if (!findUserLineByUid(searchUid, userLine))
     {
         clearLoadedUser();
         setAuthState(AuthState::Ready);
@@ -163,13 +162,15 @@ bool authUser(const String &enteredPin)
     }
 
     setAuthState(AuthState::LoggedIn);
-    tidStart = millis();
+    lastAuthActivity = millis();
     return true;
 }
 
-bool authStatus()
+bool authTimedOut(unsigned long timeoutMs)
 {
-    return currentState == AuthState::LoggedIn;
+    return currentState == AuthState::LoggedIn &&
+           lastAuthActivity != 0 &&
+           millis() - lastAuthActivity > timeoutMs;
 }
 
 AuthState authState()
@@ -191,5 +192,6 @@ void logout()
 {
     clearLoadedUser();
     clearPendingUser();
+    lastAuthActivity = 0;
     setAuthState(AuthState::Ready);
 }

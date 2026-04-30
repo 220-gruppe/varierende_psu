@@ -1,20 +1,17 @@
 // freeRTOS
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "driver/ledc.h"
 #include <SPI.h>
 #include <Wire.h>
 
-// PWM
-#include <driver/ledc.h>
-
 // Include
-#include "logo.h"
+#include "database.h"
+#include "interface_state.h"
 #include "server.h"
 #include "pwm.h"
-#include "numpad.h"
 #include "auth.h"
 #include "rfid.h"
+#include "numpad.h"
 #include "screen.h"
 
 // SPI
@@ -29,28 +26,10 @@
 float heatInput = 70000;   // aendres til noget fra sensor
 float targetCurrentMA = 5.0;
 float Kp = 1.1;
-unsigned long tidStart = 0;
-
-namespace
-{
-constexpr unsigned long INACTIVITY_TIMEOUT_MS = 30000;
-}
 
 TaskHandle_t interfaceT = nullptr;
 TaskHandle_t serverT = nullptr;
 TaskHandle_t pwmT = nullptr;
-
-void inaktivitetTjek() // LOG UD PGA INAKTIVITET
-{
-    if (authStatus() && millis() - tidStart > INACTIVITY_TIMEOUT_MS)
-    {
-        logout();
-        resetNumpad();
-        screenReady();
-        screenInactiveLogout();
-        Serial.println("logget ud pga inaktivitet");
-    }
-}
 
 void pwmTask(void *pvParameters)
 {
@@ -59,7 +38,6 @@ void pwmTask(void *pvParameters)
   for (;;)
   {
     pwmControlStep(targetCurrentMA, Kp);
-
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
@@ -70,79 +48,7 @@ void interfaceTask(void *pvParameters)
 
   for (;;)
   {
-    String scannedUID = scanUID();
-    AuthState state = authState();
-
-    if (state == AuthState::WaitingForChip)
-    {
-      screenScanNewChip();
-
-      if (scannedUID.length() > 0)
-      {
-        if (completePendingUserCreation(scannedUID))
-        {
-          resetNumpad();
-          screenReady();
-          Serial.println("Ny bruger oprettet");
-        }
-        else
-        {
-          screenReady();
-          screenUnknownChip();
-        }
-      }
-    }
-    else if (state == AuthState::WaitingForPin)
-    {
-      screenEnterPin();
-      numpadLogik();
-
-      if (isUserDone())
-      {
-        if (authUser(getTyped()))
-        {
-          screenLoggedIn(currentUserName());
-          resetNumpad();
-          Serial.println("ADGANG GODKENDT");
-        }
-        else
-        {
-          screenEnterPin();
-          screenWrongPin();
-          clearTyped();
-          resetUserDone();
-          Serial.println("FORKERT KODE!");
-        }
-      }
-    }
-    else if (authStatus())
-    {
-      screenLoggedIn(currentUserName());
-      inaktivitetTjek();
-    }
-    else
-    {
-      if (scannedUID.length() > 0)
-      {
-        if (loadUserByUID(scannedUID))
-        {
-          resetNumpad();
-          screenEnterPin();
-        }
-        else
-        {
-          screenReady();
-          screenUnknownChip();
-        }
-      }
-      else
-      {
-        screenReady();
-      }
-    }
-
-    drawScreen();
-
+    processInterfaceState();
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
@@ -180,9 +86,12 @@ void setup()
 
   Serial.println("Starter tasks");
 
-  xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 5, &pwmT, 1);
+  //xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 3, &pwmT, 1);
   xTaskCreatePinnedToCore(interfaceTask, "interface", 6144, NULL, 1, &interfaceT, 1);
-  xTaskCreatePinnedToCore(serverTask, "server", 2048, NULL, 1, &serverT, 0);
+  xTaskCreatePinnedToCore(serverTask, "server", 6144, NULL, 1, &serverT, 0);
+  
+  DB("users", "UID,USER,PASSWORD");
+  databaseRead();
 }
 
 void loop()

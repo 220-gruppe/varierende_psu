@@ -66,7 +66,7 @@ static void handleRoot()
     html += "}, 1000);";
     html += "</script></head><body><div class='card'>";
 
-    if (authStatus())
+    if (authState() == AuthState::LoggedIn)
     {
         html += "<h1>Spider-feet</h1><hr>";
         html += "<h2>Velkommen, " + currentUserName() + "</h2>";

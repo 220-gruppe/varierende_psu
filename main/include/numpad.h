@@ -9,8 +9,6 @@ void setupNumpad();
 void numpadLogik();
 String getTyped();
 bool isUserDone();
-void resetUserDone();
-void clearTyped();
 void resetNumpad();
 
 #endif

@@ -19,24 +19,10 @@ enum class ScreenState
     InactiveLogout
 };
 
-extern TFT_eSPI tft;
-
 void setupScreen();
-void clearScreen();
-void clearPinArea();
-
-void screenReady();
-void screenLoggedIn(const String &name);
-void screenEnterPin();
-void screenScanNewChip();
-void screenUnknownChip();
-void screenWrongPin();
-void screenInactiveLogout();
-
 void setScreenState(ScreenState state);
+void showTemporaryScreen(ScreenState state);
 void screenPinPreview(const String &typedPin);
-void drawPinInput(const String &maskedPin);
 void drawScreen();
-void opdaterScreen();
 
 #endif
