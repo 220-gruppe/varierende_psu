@@ -5,6 +5,12 @@
 #include <variabler.h>
 #include <server.h>
 
+
+void startMeasurement();
+void cycleProgram();
+bool confirmProgram();
+void startSvejse();
+
 void createFile()
 {
     if (!SD.exists("/logins.csv"))
@@ -145,7 +151,8 @@ void setupSPI()
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
     // START I2C SDA, SCL
-    Wire.begin(21, 16);
+    Wire.begin(21, 16);        // existing bus (numpad etc.)
+    
 
     // NUMPAD
     if (!numpad.begin(0x5A, &Wire))
@@ -233,10 +240,13 @@ bool tjekLogin(String fundetUID)
     return false;
 }
 
+
+
 void inaktivitetTjek() // LOG UD PGA INAKTIVITET
 {
     if (millis() - tidStart > TIMER)
     {
+        tft.fillScreen(SPIDER_BG);
         isLoggedIn = false;
         indtastet = "";
         tastet = "";
@@ -244,7 +254,7 @@ void inaktivitetTjek() // LOG UD PGA INAKTIVITET
         tft.setTextColor(TFT_RED, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString("INAKTIV: LOGGET UD", 160, 110, 1);
-        delay(2000);
+        delay(10000);
         nuStatus = "KLAR TIL SCAN";
         Serial.println("logget ud pga inaktivitet");
     }
@@ -274,7 +284,15 @@ void numpadLogik()
             switch (aktivtBit)
             {
             case 7:
-                tal = "0";
+                // "0" key: cycle program if in MENU state
+                if (currentState == MENU)
+                {
+                    cycleProgram();
+                }
+                else
+                {
+                    tal = "0";
+                }
                 break;
             case 0:
                 tal = "1";
@@ -304,11 +322,29 @@ void numpadLogik()
                 tal = "9";
                 break;
             case 3:
-                slet = true;
-                break; // SLET
+                // If logged in and IDLE, trigger measurement. Otherwise, delete.
+                if (isLoggedIn && currentState == IDLE)
+                {
+                    startMeasurement();
+                    currentState = MEASURE;
+                }
+                else
+                {
+                    slet = true;
+                }
+                break; // SLET / MEASURE
             case 11:
-                enter = true;
-                break; // ENTER
+                // "#" key: confirm program if in MENU state
+                if (currentState == MENU && confirmProgram())
+                {
+                    startSvejse();
+                    currentState = SVEJSE;
+                }
+                else
+                {
+                    enter = true;
+                }
+                break; // ENTER / CONFIRM
             }
 
             if (tal != "")
@@ -363,8 +399,8 @@ void numpadLogik()
                 tft.setTextDatum(MC_DATUM);
                 tft.drawString(tastet, 160, 140, 1);
             }
-            delay(250);
         }
+        delay(250);  // Always debounce numpad input
     }
 }
 

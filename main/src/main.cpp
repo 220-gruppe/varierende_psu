@@ -4,6 +4,9 @@
 #include <config.h>
 #include <functions.h>
 #include <server.h>
+#include <user_interface.h>
+#include <programs.h>
+#include <temps.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -37,12 +40,37 @@ void setup()
 {
   Serial.begin(115200);
 
+    Wire1.begin(I2C1_SDA, I2C1_SCL);
+
+    Wire.begin(I2C0_SDA, I2C0_SCL);  // numpad
+
   // setup og tjek for allerede oprettet filer
   setupSPI();
   createFile();
 }
 
 void loop()
+{
+  server.handleClient();
+  kortScan();      // TJEKKER FOR KORT
+  opdaterScreen(); // OPDATER SKÆRM
+
+  if (isLoggedIn)
+  {
+    //inaktivitetTjek(); // >15 MIN, OK?
+    StateMachine();    // SVEJSE STATE MACHINE
+  }
+  else
+  {
+    if (manglerPin) // MANGLER PIN, TJEK KODE
+    {
+      numpadLogik();
+      opdaterScreen(); // OPDATER SKÆRM
+    }
+  }
+}
+
+/*void loop()
 {
   server.handleClient();
 
@@ -57,5 +85,6 @@ void loop()
   if (isLoggedIn)
   {
     inaktivitetTjek(); // >15 MIN, OK?
+    StateMachine(); // SVEJSE STATE MACHINE
   }
-}
+}*/

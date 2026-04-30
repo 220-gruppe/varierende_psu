@@ -24,4 +24,10 @@ const char *PASSWORD = "";
 #define SD_CS 10
 #define BUTTON_PIN 3
 
+// I2C setup
+#define I2C0_SDA 21  // Wire  → numpad
+#define I2C0_SCL 16
+#define I2C1_SDA 17 // Wire1 → temp sensor
+#define I2C1_SCL 18
+
 #endif

@@ -7,11 +7,27 @@
 #include <config.h>
 #include <Wire.h>
 #include <Adafruit_MPR121.h>
+#include <temps.h>
 #include <TFT_eSPI.h>
 
+
+DFRobot_MLX90614_I2C sensor(0x5A, &Wire1);
 Adafruit_MPR121 numpad = Adafruit_MPR121();
 TFT_eSPI tft = TFT_eSPI();
 MFRC522 rc(RFID_SDA, RFID_RST); // ny instans af scanner
+
+
+enum State {
+    IDLE,
+    MEASURE,
+    MENU,
+    SVEJSE,
+    RESULT,
+    DATA,
+    LOG,
+    CHOICE
+};
+
 
 // struct
 struct SvejseLog
@@ -50,6 +66,7 @@ extern String nuStatus;
 extern String tastet;
 extern String korrektPin;
 extern String sidsteStatus;
+extern State currentState;
 
 extern unsigned long tidStart;
 
