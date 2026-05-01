@@ -1,41 +1,31 @@
-// egne libraries
-#include <logo.h>
-#include <variabler.h>
-#include <config.h>
-#include <functions.h>
-#include <server.h>
+// freeRTOS
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "driver/ledc.h"
+#include <SPI.h>
+#include <Wire.h>
 
-String scannedUID = "";
-String workerID = "";
+// Include
+#include "database.h"
+#include "interface_state.h"
+#include "server.h"
+#include "pwm.h"
+#include "auth.h"
+#include "rfid.h"
+#include "numpad.h"
+#include "screen.h"
+
+// SPI
+#define SPI_MISO 11
+#define SPI_MOSI 13
+#define SPI_SCK 12
+
+// I2C
+#define I2C_SDA 21
+#define I2C_SCL 16
+
 float heatInput = 70000;   // aendres til noget fra sensor
-uint32_t mellemLog = 0;    // aendres til reelt tidspunkt
-int counter = 0;           // blot en counter til antal
-SvejseLog aktuelSvejsning; // instans af struct
-File svejsningData;        // instans af sdkort
-File logins;               // instans af sdkort
-
 float targetCurrentMA = 5.0;
-float currentDuty = 0.0;
 float Kp = 1.1;
-
-String tempNavn = "";
-String tempPin = "";
-String tempUID = "";
-bool waitforChip = false;
-
-bool manglerPin = false;
-bool isLoggedIn = false;
-String indtastet = "";
-bool ikkeKodet = false;
-String nuStatus = "";
-String tastet = "";
-String korrektPin = "";
-String sidsteStatus = "";
-
-unsigned long tidStart = 0;
 
 TaskHandle_t interfaceT = nullptr;
 TaskHandle_t serverT = nullptr;
@@ -43,48 +33,11 @@ TaskHandle_t pwmT = nullptr;
 
 void pwmTask(void *pvParameters)
 {
-  const uint32_t pwmMaxDuty = (1UL << PWM_RESOLUTION) - 1;
-  uint32_t lastPrint = 0;
   TickType_t lastWake = xTaskGetTickCount();
 
   for (;;)
   {
-    uint32_t sumMV = 0;
-
-    for (int i = 0; i < 50; i++)
-    {
-      sumMV += analogReadMilliVolts(SHUNT_PIN);
-    }
-
-    float shuntVoltageMV = sumMV / 50.0;
-    float currentMA = shuntVoltageMV / SHUNT_RESISTOR_OHM;
-    float fejl = targetCurrentMA - currentMA;
-
-    currentDuty += fejl * Kp;
-
-    // PWM_RESOLUTION er 8-bit, saa duty skal ligge mellem 0 og 255.
-    if (currentDuty > pwmMaxDuty)
-      currentDuty = pwmMaxDuty;
-    if (currentDuty < 0)
-      currentDuty = 0;
-
-    ledc_set_duty(PWM_MODE, PWM_CHANNEL, (uint32_t)currentDuty);
-    ledc_update_duty(PWM_MODE, PWM_CHANNEL);
-
-    if (millis() - lastPrint > 500)
-    {
-      lastPrint = millis();
-      int currentDutyPct = round((currentDuty / pwmMaxDuty) * 100);
-
-      Serial.print("Target: ");
-      Serial.print(targetCurrentMA);
-      Serial.print("mA | Current: ");
-      Serial.print(currentMA);
-      Serial.print("mA | PWM Duty: ");
-      Serial.print(currentDutyPct);
-      Serial.println("%");
-    }
-
+    pwmControlStep(targetCurrentMA, Kp);
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
@@ -95,15 +48,7 @@ void interfaceTask(void *pvParameters)
 
   for (;;)
   {
-    opdaterScreen();
-    kortScan();
-
-    if (manglerPin)
-      numpadLogik();
-
-    if (isLoggedIn)
-      inaktivitetTjek();
-
+    processInterfaceState();
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
@@ -114,7 +59,7 @@ void serverTask(void *pvParameters)
 
   for (;;)
   {
-    server.handleClient();
+    processServer();
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
@@ -125,15 +70,28 @@ void setup()
   delay(1500);
   Serial.println("Boot startet");
 
-  setupSPI();
-  createFile();
+  // Start SPI
+  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+
+  // START I2C SDA, SCL
+  Wire.begin(I2C_SDA, I2C_SCL);
+
+  setupDatabase();
+  setupAuth();
   setupPwm();
+  setupRFID();
+  setupNumpad();
+  setupScreen();
+  setupServer();
 
   Serial.println("Starter tasks");
 
-  xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 5, &pwmT, 1);
+  //xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 3, &pwmT, 1);
   xTaskCreatePinnedToCore(interfaceTask, "interface", 6144, NULL, 1, &interfaceT, 1);
-  xTaskCreatePinnedToCore(serverTask, "server", 2048, NULL, 1, &serverT, 0);
+  xTaskCreatePinnedToCore(serverTask, "server", 6144, NULL, 1, &serverT, 0);
+  
+  DB("users", "UID,USER,PASSWORD");
+  databaseRead();
 }
 
 void loop()
