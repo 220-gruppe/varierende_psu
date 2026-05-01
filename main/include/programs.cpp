@@ -1,4 +1,5 @@
 #include "programs.h"
+#include "tempsensor.h"
 
 const unsigned long svejseTime_1 = 50000; // test værdi, adjust l8r
 const unsigned long svejseTime_2 = 60000;

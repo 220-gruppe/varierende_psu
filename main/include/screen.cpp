@@ -1,6 +1,6 @@
 #include "screen.h"
 #include "auth.h"
-#include "programs.h"
+#include "tempsensor.h"
 
 namespace
 {
@@ -25,6 +25,7 @@ namespace
 
     bool needsRedraw = true;
     unsigned long temporaryStateUntil = 0;
+    unsigned long remainingMs = 0;
 
     int screenCenterX()
     {
@@ -46,6 +47,10 @@ namespace
         case ScreenState::UnknownChip:
         case ScreenState::WrongPin:
             return ERROR_TIME_MS;
+        case ScreenState::ProgramConfirmation:
+            return 2000;
+        case ScreenState::LogData:
+            return 2000;
         default:
             return 0;
         }
@@ -135,7 +140,7 @@ namespace
 
     void drawProgramConfirmation()
     {
-        drawCenteredStatus("VALGT PROGRAM: " + programName(selectedProgram), SPIDER_BLUE);
+        drawCenteredStatus("VALGT PROGRAM: " + programName(p), SPIDER_BLUE);
     }
 
     void drawSvejseActive()
@@ -288,6 +293,13 @@ void screenPinPreview(const String &typedPin)
     updatePinPreview(typedPin);
 }
 
+void setRemainingTime(unsigned long ms)
+{
+    remainingMs = ms;
+    if (currentState == ScreenState::SvejseActive)
+        needsRedraw = true;
+}
+
 void drawScreen()
 {
     if (temporaryStateUntil != 0 && (long)(millis() - temporaryStateUntil) >= 0)
@@ -328,7 +340,7 @@ void drawScreen()
         drawInactiveLogout();
         break;
     case ScreenState::Ready:
-    break;
+        break;
     case ScreenState::Idle:
         drawIdle();
         break;

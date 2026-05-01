@@ -3,11 +3,10 @@
 
 #include <Arduino.h>
 
-extern int selectedProgram = 0;
-extern unsigned long svejseStartTime = 0;
-extern unsigned long svejseDuration = 0;
-extern bool svejseAktiv = false;
-extern float AVG_TEMP;
+extern int selectedProgram;
+extern unsigned long svejseStartTime;
+extern unsigned long svejseDuration;
+extern bool svejseAktiv;
 
 const char *programName(int p);
 bool confirmProgram();
@@ -16,7 +15,7 @@ void startSvejse();
 void stopSvejse();
 bool svejseHandler();
 float calcLevereretEnergi();
-float getTargetEnergy()
+float getTargetEnergy();
 bool energiOk();
 unsigned long getSvejseTime();
 
