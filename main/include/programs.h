@@ -14,9 +14,9 @@ void cycleProgram();
 void startSvejse();
 void stopSvejse();
 bool svejseHandler();
-float calcLevereretEnergi();
+float calculatedOutputEnergy();
 float getTargetEnergy();
-bool energiOk();
+bool approvedEnergy();
 unsigned long getSvejseTime();
 
 #endif

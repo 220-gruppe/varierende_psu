@@ -3,21 +3,21 @@
 
 namespace
 {
-Adafruit_MPR121 numpad = Adafruit_MPR121();
-String typed = "";
-bool userDone = false;
+    Adafruit_MPR121 numpad = Adafruit_MPR121();
+    String typed = "";
+    bool userDone = false;
 
-void applyTypedPreview()
-{
-    screenPinPreview(typed);
-}
+    void applyTypedPreview()
+    {
+        screenPinPreview(typed);
+    }
 
-void clearTypedInput()
-{
-    typed = "";
-    userDone = false;
-    applyTypedPreview();
-}
+    void clearTypedInput()
+    {
+        typed = "";
+        userDone = false;
+        applyTypedPreview();
+    }
 }
 
 void setupNumpad()
@@ -51,6 +51,16 @@ void resetNumpad()
     clearTypedInput();
 }
 
+namespace
+{
+    NumpadOverride overrideCallback = nullptr;
+}
+
+void setNumpadOverride(NumpadOverride callback)
+{
+    overrideCallback = callback;
+}
+
 void numpadLogik()
 {
     uint16_t numpadValue = numpad.touched();
@@ -81,6 +91,8 @@ void numpadLogik()
     switch (activeBit)
     {
     case 7:
+        if (overrideCallback && overrideCallback(7))
+            break;
         value = "0";
         break;
     case 0:
@@ -111,9 +123,13 @@ void numpadLogik()
         value = "9";
         break;
     case 3:
+        if (overrideCallback && overrideCallback(3))
+            break;
         clearRequested = true;
         break;
     case 11:
+        if (overrideCallback && overrideCallback(11))
+            break;
         enterRequested = true;
         break;
     default:

@@ -1,6 +1,7 @@
 #include "screen.h"
 #include "auth.h"
 #include "tempsensor.h"
+#include "programs.h"
 
 namespace
 {
@@ -140,7 +141,7 @@ namespace
 
     void drawProgramConfirmation()
     {
-        drawCenteredStatus("VALGT PROGRAM: " + programName(p), SPIDER_BLUE);
+        drawCenteredStatus("VALGT PROGRAM: " + String(programName(selectedProgram)), SPIDER_BLUE);
     }
 
     void drawSvejseActive()
@@ -175,10 +176,10 @@ namespace
         tft.drawString("Temp:     " + String(AVG_TEMP, 1) + " C", 10, 35);
         tft.drawString("Program:  " + String(programName(selectedProgram)), 10, 50);
         tft.drawString("Varighed: " + String(svejseDuration / 1000) + " s", 10, 65);
-        tft.drawString("Energi:   " + String(calcLevereretEnergi(), 1) + " J", 10, 80);
+        tft.drawString("Energi:   " + String(calculatedOutputEnergy(), 1) + " J", 10, 80);
         tft.drawString("Maal:     " + String(getTargetEnergy(), 1) + " J", 10, 95);
-        tft.setTextColor(svejseGodkendt ? TFT_GREEN : TFT_RED, SPIDER_BG);
-        tft.drawString(svejseGodkendt ? "GODKENDT" : "IKKE GODKENDT", 10, 115);
+        tft.setTextColor(SvejsningNotApproved ? TFT_GREEN : TFT_RED, SPIDER_BG);
+        tft.drawString(SvejsningApproved ? "GODKENDT" : "IKKE GODKENDT", 10, 115);
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextSize(2);
         tft.setTextDatum(MC_DATUM);

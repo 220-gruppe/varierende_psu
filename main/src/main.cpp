@@ -13,6 +13,8 @@
 #include "rfid.h"
 #include "numpad.h"
 #include "screen.h"
+#include "tempsensor.h"
+#include "programs.h"
 
 // SPI
 #define SPI_MISO 11
@@ -20,8 +22,13 @@
 #define SPI_SCK 12
 
 // I2C
-#define I2C_SDA 21
-#define I2C_SCL 16
+#define I2C_SDA1 21
+#define I2C_SCL1 16
+#define I2C_SDA2 17
+#define I2C_SCL2 18
+
+TwoWire I2C2 = TwoWire(1);
+DFRobot_MLX90614_I2C sensor;
 
 float heatInput = 70000;   // aendres til noget fra sensor
 float targetCurrentMA = 5.0;
@@ -48,7 +55,7 @@ void interfaceTask(void *pvParameters)
 
   for (;;)
   {
-    processInterfaceState();
+    processAuthenticationInterfaceState();
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
@@ -73,8 +80,12 @@ void setup()
   // Start SPI
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
-  // START I2C SDA, SCL
-  Wire.begin(I2C_SDA, I2C_SCL);
+  // 1ST I2C BUS (NUMPAD)
+  Wire.begin(I2C_SDA1, I2C_SCL1);
+
+  // 2ND I2C BUS (TEMPSSENSOR)
+  I2C2.begin(I2C_SDA2, I2C_SCL2);
+  sensor.begin();
 
   setupDatabase();
   setupAuth();

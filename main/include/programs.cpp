@@ -92,7 +92,7 @@ bool svejseHandler()
     return false; // svejsning still active or not started
 }
 
-float calcLevereretEnergi()
+float calculatedOutputEnergy()
 { // replace ohm with real value
     float t = svejseDuration / 1000.0f;
     return CURRENT_A * CURRENT_A * MODSTAND_OHM * t;
@@ -104,8 +104,8 @@ float getTargetEnergy()
 }
 
 
-bool energiOk()
+bool approvedEnergy()
 {
-    return calcLevereretEnergi() >= getTargetEnergy();
+    return calculatedOutputEnergy() >= getTargetEnergy();
 }
 
