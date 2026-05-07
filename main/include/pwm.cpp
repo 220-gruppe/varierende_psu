@@ -4,6 +4,9 @@ namespace
 {
 float currentDuty = 0.0f;
 unsigned long lastPrint = 0;
+float currentMA = 0.0f;
+float lastTargetCurrentMA = 0.0f;
+float shuntVoltageMV = 0.0f;
 }
 
 void setupPwm()
@@ -34,6 +37,7 @@ void setupPwm()
 
 void pwmControlStep(float targetCurrentMA, float kp)
 {
+  lastTargetCurrentMA = targetCurrentMA;
   const uint32_t pwmMaxDuty = (1UL << PWM_RESOLUTION) - 1;
   uint32_t sumMV = 0;
 
@@ -42,8 +46,8 @@ void pwmControlStep(float targetCurrentMA, float kp)
     sumMV += analogReadMilliVolts(SHUNT_PIN);
   }
 
-  float shuntVoltageMV = sumMV / 50.0f;
-  float currentMA = shuntVoltageMV / SHUNT_RESISTOR_OHM;
+  shuntVoltageMV = sumMV / 50.0f;
+  currentMA = shuntVoltageMV / SHUNT_RESISTOR_OHM;
   float fejl = targetCurrentMA - currentMA;
 
   currentDuty += fejl * kp;
@@ -74,4 +78,19 @@ void pwmControlStep(float targetCurrentMA, float kp)
     Serial.print(currentDutyPct);
     Serial.println("%");
   }
+}
+
+float getCurrentMA()
+{
+  return currentMA;
+} 
+
+float getTargetCurrentMa()
+{
+  return lastTargetCurrentMA;
+}
+
+float getShuntVoltageMV()
+{
+  return shuntVoltageMV;
 }

@@ -8,6 +8,7 @@
 #include "screen.h"
 #include "programs.h"
 #include "tempsensor.h"
+#include "svejse_logs.h"
 
 namespace
 {
@@ -120,7 +121,6 @@ namespace
 
     UserInterfaceState currentUserInterfaceState = UserInterfaceState::Idle;
     unsigned long stateTimer = 0;
-    bool svejsningApproved = false;
 
     bool UserInterfaceNumpadOverride(int activeBit)
     {
@@ -236,15 +236,14 @@ namespace
         {
             stopSvejse();
             heatInput = calculatedOutputEnergy();
-            svejsningApproved = approvedEnergy();
-            setSvejsningApproved(svejsningApproved);
+            saveSvejsningResult();
             currentUserInterfaceState = UserInterfaceState::Result;
         }
     }
 
     void handleResultState()
     {
-        if (svejsningApproved)
+        if (wasApproved)
         {
             setScreenState(ScreenState::SvejsningApproved);
             numpadLogik();
@@ -265,7 +264,7 @@ namespace
 
     void handleLogDataState()
     {
-        saveData();
+        LogSvejseData();
         showTemporaryScreen(ScreenState::LogData);
         selectedProgram = 0;
         currentUserInterfaceState = UserInterfaceState::Choice;
@@ -316,6 +315,10 @@ void processAuthenticationInterfaceState()
 
 void processUserInterfaceState()
 {
+    if (authState() != AuthState::LoggedIn)
+    {
+        return;
+    }
     handleUserInactivity();
     setNumpadOverride(UserInterfaceNumpadOverride);
 

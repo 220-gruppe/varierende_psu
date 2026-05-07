@@ -2,6 +2,8 @@
 #include "auth.h"
 #include "tempsensor.h"
 #include "programs.h"
+#include "svejse_logs.h"
+#include "pwm.h"
 
 namespace
 {
@@ -145,7 +147,7 @@ namespace
     }
 
     void drawSvejseActive()
-    {
+    {//maybe add graph with mA and mV?
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 1);
@@ -169,7 +171,6 @@ namespace
 
     void drawData()
     {
-
         tft.setTextSize(1);
         tft.setTextDatum(ML_DATUM); // left-align for compact layout
         tft.drawString("SVEJSE DATA: ", 10, 20);
@@ -178,8 +179,9 @@ namespace
         tft.drawString("Varighed: " + String(svejseDuration / 1000) + " s", 10, 65);
         tft.drawString("Energi:   " + String(calculatedOutputEnergy(), 1) + " J", 10, 80);
         tft.drawString("Maal:     " + String(getTargetEnergy(), 1) + " J", 10, 95);
-        tft.setTextColor(SvejsningNotApproved ? TFT_GREEN : TFT_RED, SPIDER_BG);
-        tft.drawString(SvejsningApproved ? "GODKENDT" : "IKKE GODKENDT", 10, 115);
+        bool approved = wasApproved();
+        tft.setTextColor(approved ? TFT_GREEN : TFT_RED, SPIDER_BG);
+        tft.drawString(approved ? "GODKENDT" : "IKKE GODKENDT", 10, 115);
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextSize(2);
         tft.setTextDatum(MC_DATUM);

@@ -11,9 +11,6 @@ unsigned long svejseStartTime = 0;
 unsigned long svejseDuration = 0;
 bool svejseAktiv = false;
 
-const float CURRENT_A = 32.0; // test værdi, adjust l8r
-float MODSTAND_OHM = 0.3729f; // resistance of thicker wire
-
 unsigned long getSvejseTime()
 {
     switch (selectedProgram)
@@ -92,20 +89,4 @@ bool svejseHandler()
     return false; // svejsning still active or not started
 }
 
-float calculatedOutputEnergy()
-{ // replace ohm with real value
-    float t = svejseDuration / 1000.0f;
-    return CURRENT_A * CURRENT_A * MODSTAND_OHM * t;
-}
-
-float getTargetEnergy()
-{
-    return MODSTAND_OHM * 500.0f * (2100.0f - AVG_TEMP); // ask Jakob ...
-}
-
-
-bool approvedEnergy()
-{
-    return calculatedOutputEnergy() >= getTargetEnergy();
-}
 

@@ -28,7 +28,6 @@
 #define I2C_SCL2 18
 
 TwoWire I2C2 = TwoWire(1);
-DFRobot_MLX90614_I2C sensor;
 
 float heatInput = 70000;   // aendres til noget fra sensor
 float targetCurrentMA = 5.0;
@@ -56,6 +55,7 @@ void interfaceTask(void *pvParameters)
   for (;;)
   {
     processAuthenticationInterfaceState();
+    processUserInterfaceState();
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
