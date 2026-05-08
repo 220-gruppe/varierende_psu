@@ -1,6 +1,6 @@
 #include "tempsensor.h"
 
-extern DFRobot_MLX90614_I2C sensor(0x5A, &Wire);
+DFRobot_MLX90614_I2C sensor(0x5A, &Wire1);
 
 float AVG_TEMP = 0.0f;
 

@@ -96,6 +96,8 @@ void numpadLogik()
         value = "0";
         break;
     case 0:
+        if (overrideCallback && overrideCallback(0))
+            break;
         value = "1";
         break;
     case 4:

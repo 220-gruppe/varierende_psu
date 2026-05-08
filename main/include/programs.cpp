@@ -4,7 +4,7 @@
 const unsigned long svejseTime_1 = 50000; // test værdi, adjust l8r
 const unsigned long svejseTime_2 = 60000;
 const unsigned long svejseTime_3 = 70000;
-const unsigned long svejseTime_4 = 80000;
+const unsigned long svejseTime_4 = 183000;
 
 int selectedProgram = 0;
 unsigned long svejseStartTime = 0;
@@ -33,13 +33,13 @@ const char *programName(int p)
     switch (p)
     {
     case 1:
-        return "Program 1 <-10..+10C>"; // test værdier, adjust l8r
+        return "Program 1 "; // test værdier, adjust l8r
     case 2:
-        return "Program 2 <+10..+20C>";
+        return "Program 2 ";
     case 3:
-        return "Program 3 <+20..+30C>";
+        return "Program 3 ";
     case 4:
-        return "Program 4 <+30..+40C>";
+        return "Program 4 ";
     default:
         return "Intet  valgt";
     }

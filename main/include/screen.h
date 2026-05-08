@@ -31,6 +31,7 @@ enum class ScreenState
     Choice
 };
 
+void forceRedraw();
 void setupScreen();
 void setScreenState(ScreenState state);
 void showTemporaryScreen(ScreenState state);

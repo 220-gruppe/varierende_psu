@@ -24,7 +24,7 @@ float calculatedOutputEnergy()
 
 float getTargetEnergy()
 {
-    return MODSTAND_OHM * 500.0f * (2100.0f - AVG_TEMP); // ask Jakob ...
+    return 0.032f * 500.0f * (4300.0f - AVG_TEMP); // thicker wire for mass (0.032)
 }
 
 SvejsningStatus GetSvejsningStatus()
@@ -32,11 +32,12 @@ SvejsningStatus GetSvejsningStatus()
     lastStatus = (calculatedOutputEnergy() >= getTargetEnergy())
                      ? SvejsningStatus::Approved
                      : SvejsningStatus::NotApproved;
+    return lastStatus;
 }
 
 void saveSvejsningResult()
 {
-    lastStatus = GetSvejsningStatus();
+    GetSvejsningStatus();
 }
 
 bool wasApproved()

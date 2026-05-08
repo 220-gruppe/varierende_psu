@@ -12,7 +12,102 @@
 
 namespace
 {
-    constexpr unsigned long INACTIVITY_TIMEOUT_MS = 30000;
+    enum class UserInterfaceState
+    {
+        Idle,
+        Measure,
+        Menu,
+        Svejse,
+        Result,
+        Data,
+        Log,
+        Choice
+    };
+
+    constexpr unsigned long INACTIVITY_TIMEOUT_MS = 240000;
+    constexpr unsigned long TEMP_DISPLAY_MS = 3000;
+    unsigned long stateTimer = 0;
+
+    UserInterfaceState currentUserInterfaceState = UserInterfaceState::Idle;
+
+    bool UserInterfaceNumpadOverride(int activeBit)
+    {
+        resetAuthTimer();
+        Serial.println("NUMPAD IS OVERRIDDEN YO" + String(activeBit));
+        switch (currentUserInterfaceState)
+        {
+        case UserInterfaceState::Idle:
+            if (activeBit == 3)
+            {
+                currentUserInterfaceState = UserInterfaceState::Measure;
+                setScreenState(ScreenState::Measuring);
+                return true;
+            }
+            break;
+        case UserInterfaceState::Menu:
+            if (activeBit == 7)
+            {
+                cycleProgram();
+                forceRedraw();
+                return true;
+            }
+            if (activeBit == 11)
+            {
+                if (confirmProgram())
+                {
+                    showTemporaryScreen(ScreenState::ProgramConfirmation);
+                    startSvejse();
+                    currentUserInterfaceState = UserInterfaceState::Svejse;
+                }
+                return true;
+            }
+            if (activeBit == 3)
+            {
+                currentUserInterfaceState = UserInterfaceState::Idle;
+                return true;
+            }
+            break;
+        case UserInterfaceState::Result:
+            if (activeBit == 11)
+            {
+                startSvejse();
+                currentUserInterfaceState = UserInterfaceState::Svejse;
+                return true;
+            }
+            if (activeBit == 0)
+            {
+                currentUserInterfaceState = UserInterfaceState::Data;
+                return true;
+            }
+            break;
+        case UserInterfaceState::Data:
+            if (activeBit == 11)
+            {
+                currentUserInterfaceState = UserInterfaceState::Log;
+                return true;
+            }
+            break;
+        case UserInterfaceState::Choice:
+            if (activeBit == 3)
+            {
+                currentUserInterfaceState = UserInterfaceState::Idle;
+                return true;
+            }
+            if (activeBit == 0)
+            {
+                logout();
+                resetNumpad();
+                currentUserInterfaceState = UserInterfaceState::Idle;
+                selectedProgram = 0;
+                setScreenState(ScreenState::Ready);
+                return true;
+            }
+            break;
+        default:
+            break;
+        }
+        return false;
+    }
 
     void showUnknownChip()
     {
@@ -67,6 +162,7 @@ namespace
         if (authUser(getTyped()))
         {
             setScreenState(ScreenState::LoggedIn);
+            setNumpadOverride(UserInterfaceNumpadOverride);
             resetNumpad();
             Serial.println("ADGANG GODKENDT");
             return;
@@ -80,7 +176,7 @@ namespace
 
     void handleLoggedInState()
     {
-        setScreenState(ScreenState::LoggedIn);
+        // setScreenState(ScreenState::LoggedIn);
         handleInactivity();
     }
 
@@ -101,126 +197,53 @@ namespace
 
         showUnknownChip();
     }
-}
-
-namespace
-{
-    constexpr unsigned long TEMP_DISPLAY_MS = 3000;
-
-    enum class UserInterfaceState
-    {
-        Idle,
-        Measure,
-        Menu,
-        Svejse,
-        Result,
-        Data,
-        Log,
-        Choice
-    };
-
-    UserInterfaceState currentUserInterfaceState = UserInterfaceState::Idle;
-    unsigned long stateTimer = 0;
-
-    bool UserInterfaceNumpadOverride(int activeBit)
-    {
-        switch (currentUserInterfaceState)
-        {
-        case UserInterfaceState::Idle:
-            if (activeBit == 3)
-            {
-                currentUserInterfaceState = UserInterfaceState::Measure;
-                return true;
-            }
-            break;
-        case UserInterfaceState::Menu:
-            if (activeBit == 7)
-            {
-                cycleProgram();
-                setScreenState(ScreenState::ProgramSelection);
-                return true;
-            }
-            if (activeBit == 11)
-            {
-                if (confirmProgram())
-                {
-                    showTemporaryScreen(ScreenState::ProgramConfirmation);
-                    startSvejse();
-                    currentUserInterfaceState = UserInterfaceState::Svejse;
-                }
-                return true;
-            }
-            if (activeBit == 3)
-            {
-                currentUserInterfaceState = UserInterfaceState::Idle;
-                return true;
-            }
-            break;
-        case UserInterfaceState::Result:
-            if (activeBit == 11)
-            {
-                startSvejse();
-                currentUserInterfaceState = UserInterfaceState::Svejse;
-                return true;
-            }
-            if (activeBit == 0)
-            {
-                currentUserInterfaceState = UserInterfaceState::Data;
-                return true;
-            }
-            break;
-        case UserInterfaceState::Data:
-            if (activeBit == 11)
-            {
-                currentUserInterfaceState = UserInterfaceState::Log;
-                return true;
-            }
-            break;
-        case UserInterfaceState::Choice:
-            if (activeBit == 3)
-            {
-                currentUserInterfaceState = UserInterfaceState::Idle;
-                return true;
-            }
-            if (activeBit == 0)
-            {
-                logout();
-                resetNumpad();
-                currentUserInterfaceState = UserInterfaceState::Idle;
-                return true;
-            }
-            break;
-        default:
-            break;
-        }
-        return false;
-    }
 
     void handleIdleState()
     {
         setScreenState(ScreenState::Idle);
+        Serial.println("CALLING NUMPADLOGIK");
         numpadLogik();
     }
 
     void handleMeasureState()
     {
-        setScreenState(ScreenState::Measuring);
-        AVG_TEMP = takeTempMeasurement();
-        setScreenState(ScreenState::MeasurementResult);
-        stateTimer = millis();
+        resetAuthTimer();
 
-        while (millis() - stateTimer < TEMP_DISPLAY_MS)
+        if (stateTimer == 0)
         {
-            drawScreen();
-            vTaskDelay(pdMS_TO_TICKS(10));
+            setScreenState(ScreenState::Measuring);
+            AVG_TEMP = takeTempMeasurement();
+            setScreenState(ScreenState::MeasurementResult);
+            stateTimer = millis();
+            return;
         }
 
-        selectedProgram = 1;
-        currentUserInterfaceState = UserInterfaceState::Menu;
+        if (millis() - stateTimer >= TEMP_DISPLAY_MS)
+        {
+            stateTimer = 0;
+            selectedProgram = 1;
+            Serial.println("GOING TO MENU");
+            currentUserInterfaceState = UserInterfaceState::Menu;
+        }
+
+        // setScreenState(ScreenState::Measuring);
+        // AVG_TEMP = takeTempMeasurement();
+        // setScreenState(ScreenState::MeasurementResult);
+        // stateTimer = millis();
+
+        // while (millis() - stateTimer < TEMP_DISPLAY_MS)
+        // {
+        //     drawScreen();
+        //     vTaskDelay(pdMS_TO_TICKS(10));
+        // }
+
+        // selectedProgram = 1;
+        // currentUserInterfaceState = UserInterfaceState::Menu;
     }
 
     void handleMenuState()
     {
+        Serial.println("IN MENU STATE");
         setScreenState(ScreenState::ProgramSelection);
         numpadLogik();
     }
@@ -234,16 +257,21 @@ namespace
 
         if (svejseHandler())
         {
-            stopSvejse();
-            heatInput = calculatedOutputEnergy();
-            saveSvejsningResult();
-            currentUserInterfaceState = UserInterfaceState::Result;
+        Serial.println("svejseHandler returned true");
+        stopSvejse();
+        Serial.println("stopSvejse done");
+        heatInput = calculatedOutputEnergy();
+        Serial.println("calculatedOutputEnergy done");
+        saveSvejsningResult();
+        Serial.println("saveSvejsningResult done");
+        currentUserInterfaceState = UserInterfaceState::Result;
+        Serial.println("Transitioning to Result");
         }
     }
 
     void handleResultState()
     {
-        if (wasApproved)
+        if (wasApproved())
         {
             setScreenState(ScreenState::SvejsningApproved);
             numpadLogik();
@@ -293,6 +321,11 @@ void processAuthenticationInterfaceState()
 {
     String scannedUID = scanUID();
 
+    // DEBUGGING=====================================
+    Serial.print("AUTH STATE: ");
+    Serial.println(int(authState()));
+    //===============================================
+
     switch (authState())
     {
     case AuthState::WaitingForChip:
@@ -309,18 +342,21 @@ void processAuthenticationInterfaceState()
         handleReadyState(scannedUID);
         break;
     }
-
-    drawScreen();
 }
 
 void processUserInterfaceState()
 {
+    // DEBUGGING=====================================
+    Serial.print("USER STATE: ");
+    Serial.println(int(currentUserInterfaceState));
+    //===============================================
+
     if (authState() != AuthState::LoggedIn)
     {
         return;
     }
     handleUserInactivity();
-    setNumpadOverride(UserInterfaceNumpadOverride);
+    // setNumpadOverride(UserInterfaceNumpadOverride);
 
     switch (currentUserInterfaceState)
     {
@@ -352,5 +388,4 @@ void processUserInterfaceState()
         handleIdleState();
         break;
     }
-    drawScreen();
 }

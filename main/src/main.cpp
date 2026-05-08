@@ -27,13 +27,14 @@
 #define I2C_SDA2 17
 #define I2C_SCL2 18
 
-TwoWire I2C2 = TwoWire(1);
+// TwoWire I2C2 = TwoWire(1);
 
-float heatInput = 70000;   // aendres til noget fra sensor
+float heatInput = 70000; // aendres til noget fra sensor
 float targetCurrentMA = 5.0;
 float Kp = 1.1;
 
-TaskHandle_t interfaceT = nullptr;
+TaskHandle_t auth_interfaceT = nullptr;
+// TaskHandle_t user_interfaceT = nullptr;
 TaskHandle_t serverT = nullptr;
 TaskHandle_t pwmT = nullptr;
 
@@ -48,7 +49,7 @@ void pwmTask(void *pvParameters)
   }
 }
 
-void interfaceTask(void *pvParameters)
+void auth_interfaceTask(void *pvParameters)
 {
   TickType_t lastWake = xTaskGetTickCount();
 
@@ -56,9 +57,23 @@ void interfaceTask(void *pvParameters)
   {
     processAuthenticationInterfaceState();
     processUserInterfaceState();
+    drawScreen();
     xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
   }
 }
+
+/*
+void user_interfaceTask(void *pvParameters)
+{
+  TickType_t lastWake = xTaskGetTickCount();
+
+  for (;;)
+  {
+    processUserInterfaceState();
+    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
+  }
+}
+*/
 
 void serverTask(void *pvParameters)
 {
@@ -74,7 +89,7 @@ void serverTask(void *pvParameters)
 void setup()
 {
   Serial.begin(115200);
-  delay(1500);
+  delay(3000);
   Serial.println("Boot startet");
 
   // Start SPI
@@ -84,23 +99,42 @@ void setup()
   Wire.begin(I2C_SDA1, I2C_SCL1);
 
   // 2ND I2C BUS (TEMPSSENSOR)
-  I2C2.begin(I2C_SDA2, I2C_SCL2);
-  sensor.begin();
+  Wire1.begin(I2C_SDA2, I2C_SCL2);
 
   setupDatabase();
   setupAuth();
   setupPwm();
   setupRFID();
+  setupTempSensor();
   setupNumpad();
   setupScreen();
   setupServer();
 
   Serial.println("Starter tasks");
 
-  //xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 3, &pwmT, 1);
-  xTaskCreatePinnedToCore(interfaceTask, "interface", 6144, NULL, 1, &interfaceT, 1);
+  // xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 3, &pwmT, 1);
+  xTaskCreatePinnedToCore(auth_interfaceTask, "auth_interface", 16384, NULL, 2, &auth_interfaceT, 1);
+  // xTaskCreatePinnedToCore(user_interfaceTask, "user_interface", 8192, NULL, 1, &user_interfaceT, 1);
   xTaskCreatePinnedToCore(serverTask, "server", 6144, NULL, 1, &serverT, 0);
-  
+
+  /*==============================================================*/
+  // DEBUGGING
+  if (auth_interfaceT == nullptr)
+    Serial.println("auth_interfaceT FEJL - kunne ikke oprettes");
+  else
+    Serial.println("auth_interfaceT OK");
+
+  // if (user_interfaceT == nullptr)
+  //   Serial.println("user_interfaceT FEJL - kunne ikke oprettes");
+  // else
+  //   Serial.println("user_interfaceT OK");
+
+  if (serverT == nullptr)
+    Serial.println("serverTask FEJL - kunne ikke oprettes");
+  else
+    Serial.println("serverTask OK");
+  /*==============================================================*/
+
   DB("users", "UID,USER,PASSWORD");
   databaseRead();
 }
