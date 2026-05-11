@@ -1,90 +1,100 @@
-// egne libraries
-#include <logo.h>
-#include <variabler.h>
-#include <config.h>
-#include <functions.h>
-#include <server.h>
-#include <user_interface.h>
-#include <programs.h>
-#include <temps.h>
+// freeRTOS
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <SPI.h>
+#include <Wire.h>
 
-String scannedUID = "";
-String workerID = "";
-float heatInput = 70000;   // ændres til noget fra sensor
-uint32_t mellemLog = 0;    // ændres til reelt tidspunkt
-int counter = 0;           // blot en counter til antal
-SvejseLog aktuelSvejsning; // instans af struct
-File svejsningData;        // instans af sdkort
-File logins;               // instans af sdkort
+// Include
+#include "database.h"
+#include "interface_state.h"
+#include "server.h"
+#include "pwm.h"
+#include "auth.h"
+#include "rfid.h"
+#include "numpad.h"
+#include "screen.h"
 
-// variabler til opret nyt login
-String tempNavn = "";
-String tempPin = "";
-String tempUID = "";
-bool waitforChip = false;
+// SPI
+#define SPI_MISO 11
+#define SPI_MOSI 13
+#define SPI_SCK 12
 
-bool manglerPin = false;
-bool isLoggedIn = false;
-String indtastet = "";
-bool ikkeKodet = false;
-String nuStatus = "";
-String tastet = "";
-String korrektPin = "";
-String sidsteStatus = "";
+// I2C
+#define I2C_SDA 21
+#define I2C_SCL 16
 
-unsigned long tidStart = 0;
+float heatInput = 70000;   // aendres til noget fra sensor
+float targetCurrentMA = 5.0;
+float Kp = 1.1;
+
+TaskHandle_t interfaceT = nullptr;
+TaskHandle_t serverT = nullptr;
+TaskHandle_t pwmT = nullptr;
+
+void pwmTask(void *pvParameters)
+{
+  TickType_t lastWake = xTaskGetTickCount();
+
+  for (;;)
+  {
+    pwmControlStep(targetCurrentMA, Kp);
+    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
+  }
+}
+
+void interfaceTask(void *pvParameters)
+{
+  TickType_t lastWake = xTaskGetTickCount();
+
+  for (;;)
+  {
+    processInterfaceState();
+    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
+  }
+}
+
+void serverTask(void *pvParameters)
+{
+  TickType_t lastWake = xTaskGetTickCount();
+
+  for (;;)
+  {
+    processServer();
+    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
+  }
+}
 
 void setup()
 {
   Serial.begin(115200);
+  delay(1500);
+  Serial.println("Boot startet");
 
-    Wire1.begin(I2C1_SDA, I2C1_SCL);
+  // Start SPI
+  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
-    Wire.begin(I2C0_SDA, I2C0_SCL);  // numpad
+  // START I2C SDA, SCL
+  Wire.begin(I2C_SDA, I2C_SCL);
 
-  // setup og tjek for allerede oprettet filer
-  setupSPI();
-  createFile();
+  setupDatabase();
+  setupAuth();
+  setupPwm();
+  setupRFID();
+  setupNumpad();
+  setupScreen();
+  setupServer();
+
+  Serial.println("Starter tasks");
+
+  //xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 3, &pwmT, 1);
+  xTaskCreatePinnedToCore(interfaceTask, "interface", 6144, NULL, 1, &interfaceT, 1);
+  xTaskCreatePinnedToCore(serverTask, "server", 6144, NULL, 1, &serverT, 0);
+  
+  DB("users", "UID,USER,PASSWORD");
+  databaseRead();
 }
 
 void loop()
 {
-  server.handleClient();
-  kortScan();      // TJEKKER FOR KORT
-  opdaterScreen(); // OPDATER SKÆRM
-
-  if (isLoggedIn)
-  {
-    //inaktivitetTjek(); // >15 MIN, OK?
-    StateMachine();    // SVEJSE STATE MACHINE
-  }
-  else
-  {
-    if (manglerPin) // MANGLER PIN, TJEK KODE
-    {
-      numpadLogik();
-      opdaterScreen(); // OPDATER SKÆRM
-    }
-  }
+  vTaskDelay(pdMS_TO_TICKS(1000));
 }
-
-/*void loop()
-{
-  server.handleClient();
-
-  opdaterScreen(); // OPDATER SKÆRM
-  kortScan();      // TJEKKER FOR KORT
-
-  if (manglerPin) // MANGLER PIN, TJEK KODE
-  {
-    numpadLogik();
-  }
-
-  if (isLoggedIn)
-  {
-    inaktivitetTjek(); // >15 MIN, OK?
-    StateMachine(); // SVEJSE STATE MACHINE
-  }
-}*/
