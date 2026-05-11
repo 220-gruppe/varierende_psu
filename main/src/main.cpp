@@ -27,8 +27,6 @@
 #define I2C_SDA2 17
 #define I2C_SCL2 18
 
-// TwoWire I2C2 = TwoWire(1);
-
 float heatInput = 70000; // aendres til noget fra sensor
 float targetCurrentMA = 5.0;
 float Kp = 1.1;

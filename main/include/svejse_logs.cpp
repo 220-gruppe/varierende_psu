@@ -4,7 +4,6 @@
 #include "pwm.h"
 #include "database.h"
 
-// float heatInput = 70000;      // aendres til noget fra sensor
 constexpr float MODSTAND_OHM = 0.3729f; // resistance of thicker wire
 
 extern float sumMV;
@@ -17,7 +16,7 @@ static const char *SVEJSE_LOG_TABLE = "svejse_logs";
 static const char *SVEJSE_LOG_COLUMNS = "STATUS, CALCULATED_ENERGY, TARGET_ENERGY, AVG_TEMP, SVEJSNING_TIME";
 
 float calculatedOutputEnergy()
-{ // replace ohm with real value
+{ 
     float t = svejseDuration / 1000.0f;
     return getCurrentMA() * getCurrentMA() * MODSTAND_OHM * t;
 }

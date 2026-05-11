@@ -33,7 +33,7 @@ const char *programName(int p)
     switch (p)
     {
     case 1:
-        return "Program 1 "; // test værdier, adjust l8r
+        return "Program 1 "; 
     case 2:
         return "Program 2 ";
     case 3:
@@ -57,8 +57,7 @@ void cycleProgram()
 
 void startSvejse()
 {
-    // svejseDuration = getSvejseTime();
-    svejseDuration = getSvejseTime(); // test værdi, adjust l8r
+    svejseDuration = getSvejseTime(); 
     svejseStartTime = millis();
     svejseAktiv = true;
     Serial.print("startSvejse called. Duration: ");
@@ -84,9 +83,9 @@ bool svejseHandler()
     if (elapsed >= svejseDuration)
     {
         stopSvejse();
-        return true; // svejsning completed
+        return true; 
     }
-    return false; // svejsning still active or not started
+    return false; 
 }
 
 

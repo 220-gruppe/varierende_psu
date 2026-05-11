@@ -176,7 +176,6 @@ namespace
 
     void handleLoggedInState()
     {
-        // setScreenState(ScreenState::LoggedIn);
         handleInactivity();
     }
 
@@ -225,20 +224,6 @@ namespace
             Serial.println("GOING TO MENU");
             currentUserInterfaceState = UserInterfaceState::Menu;
         }
-
-        // setScreenState(ScreenState::Measuring);
-        // AVG_TEMP = takeTempMeasurement();
-        // setScreenState(ScreenState::MeasurementResult);
-        // stateTimer = millis();
-
-        // while (millis() - stateTimer < TEMP_DISPLAY_MS)
-        // {
-        //     drawScreen();
-        //     vTaskDelay(pdMS_TO_TICKS(10));
-        // }
-
-        // selectedProgram = 1;
-        // currentUserInterfaceState = UserInterfaceState::Menu;
     }
 
     void handleMenuState()
@@ -321,10 +306,10 @@ void processAuthenticationInterfaceState()
 {
     String scannedUID = scanUID();
 
-    // DEBUGGING=====================================
-    Serial.print("AUTH STATE: ");
-    Serial.println(int(authState()));
-    //===============================================
+    // // DEBUGGING=====================================
+    // Serial.print("AUTH STATE: ");
+    // Serial.println(int(authState()));
+    // //===============================================
 
     switch (authState())
     {
@@ -346,17 +331,16 @@ void processAuthenticationInterfaceState()
 
 void processUserInterfaceState()
 {
-    // DEBUGGING=====================================
-    Serial.print("USER STATE: ");
-    Serial.println(int(currentUserInterfaceState));
-    //===============================================
+    // // DEBUGGING=====================================
+    // Serial.print("USER STATE: ");
+    // Serial.println(int(currentUserInterfaceState));
+    // //===============================================
 
     if (authState() != AuthState::LoggedIn)
     {
         return;
     }
     handleUserInactivity();
-    // setNumpadOverride(UserInterfaceNumpadOverride);
 
     switch (currentUserInterfaceState)
     {
