@@ -21,6 +21,7 @@ bool authTimedOut(unsigned long timeoutMs);
 AuthState authState();
 String authStateName();
 String currentUserName();
+void resetAuthTimer();
 void logout();
 
 #endif

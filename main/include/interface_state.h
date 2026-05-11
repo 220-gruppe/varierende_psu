@@ -1,6 +1,7 @@
 #ifndef INTERFACE_STATE_H
 #define INTERFACE_STATE_H
 
-void processInterfaceState();
+void processAuthenticationInterfaceState();
+void processUserInterfaceState();
 
 #endif

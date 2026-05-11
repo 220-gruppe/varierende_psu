@@ -188,6 +188,11 @@ String currentUserName()
     return user;
 }
 
+void resetAuthTimer()
+{
+    lastAuthActivity = millis();
+}
+
 void logout()
 {
     clearLoadedUser();
