@@ -22,10 +22,8 @@
 #define SPI_SCK 12
 
 // I2C
-#define I2C_SDA1 21
-#define I2C_SCL1 16
-#define I2C_SDA2 17
-#define I2C_SCL2 18
+#define I2C_SDA 16
+#define I2C_SCL 17
 
 float heatInput = 70000; // aendres til noget fra sensor
 float targetCurrentMA = 5.0;
@@ -93,11 +91,9 @@ void setup()
   // Start SPI
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
-  // 1ST I2C BUS (NUMPAD)
-  Wire.begin(I2C_SDA1, I2C_SCL1);
-
-  // 2ND I2C BUS (TEMPSSENSOR)
-  Wire1.begin(I2C_SDA2, I2C_SCL2);
+  // Start I2C
+  Wire.setPins(I2C_SDA, I2C_SCL);
+  Wire.begin(I2C_SDA, I2C_SCL);
 
   setupDatabase();
   setupAuth();

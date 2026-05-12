@@ -245,8 +245,6 @@ namespace
         Serial.println("svejseHandler returned true");
         stopSvejse();
         Serial.println("stopSvejse done");
-        heatInput = calculatedOutputEnergy();
-        Serial.println("calculatedOutputEnergy done");
         saveSvejsningResult();
         Serial.println("saveSvejsningResult done");
         currentUserInterfaceState = UserInterfaceState::Result;

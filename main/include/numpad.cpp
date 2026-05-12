@@ -3,6 +3,8 @@
 
 namespace
 {
+    constexpr uint8_t MPR121_ADDR = 0x5B;
+
     Adafruit_MPR121 numpad = Adafruit_MPR121();
     String typed = "";
     bool userDone = false;
@@ -22,7 +24,7 @@ namespace
 
 void setupNumpad()
 {
-    if (!numpad.begin(0x5A, &Wire))
+    if (!numpad.begin(MPR121_ADDR, &Wire))
     {
         Serial.println("STOP! MPR121 ikke fundet.");
         while (1)
@@ -31,7 +33,7 @@ void setupNumpad()
         }
     }
 
-    Serial.println("Den er fundet makker");
+    Serial.println("Den er fundet makker numpad");
     numpad.setAutoconfig(true);
     applyTypedPreview();
 }

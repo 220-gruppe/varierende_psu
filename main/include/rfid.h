@@ -4,8 +4,8 @@
 #include <Arduino.h>
 #include <MFRC522.h>
 
-#define RFID_SDA 2
-#define RFID_RST 1
+#define RFID_SDA 16
+#define RFID_RST 21
 
 void setupRFID();
 String scanUID();

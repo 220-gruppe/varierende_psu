@@ -1,0 +1,62 @@
+@startuml
+title FreeRTOS Task Flowchart
+
+start
+
+:setup();
+:Serial.begin(115200);
+:SPI.begin(...);
+:Wire.begin(...);
+:setupDatabase();
+:setupAuth();
+:setupPwm();
+:setupRFID();
+:setupNumpad();
+:setupScreen();
+:setupServer();
+
+fork
+  :Create interfaceTask\nCore 1\nPeriod 10 ms;
+  while (Task runs?)
+    :processInterfaceState();
+    note right
+      scanUID()
+      switch(authState())
+      - WaitingForChip
+      - WaitingForPin
+      - LoggedIn
+      - Ready
+      drawScreen()
+    end note
+    :xTaskDelayUntil(10 ms);
+  endwhile
+fork again
+  :Create serverTask\nCore 0\nPeriod 10 ms;
+  while (Task runs?)
+    :processServer();
+    note right
+      server.handleClient()
+      web routes:
+      /, /opret, /gemLogin,
+      /verificerPin,
+      /checkStatus,
+      /logout, /reset
+    end note
+    :xTaskDelayUntil(10 ms);
+  endwhile
+fork again
+  :pwmTask exists in code;
+  note right
+    Currently not started because
+    xTaskCreatePinnedToCore(...)
+    is commented out in setup()
+  end note
+  :If enabled:
+  while (Task runs?)
+    :pwmControlStep(targetCurrentMA, Kp);
+    :xTaskDelayUntil(10 ms);
+  endwhile
+end fork
+
+stop
+@enduml
