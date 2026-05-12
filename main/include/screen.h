@@ -7,7 +7,9 @@
 #include "programs.h"
 
 constexpr uint16_t SPIDER_BG = 0xE6D6;
+constexpr uint16_t SPIDER_GRAA = 0x03F0;
 constexpr uint16_t SPIDER_BLUE = TFT_BLUE;
+
 
 enum class ScreenState
 {

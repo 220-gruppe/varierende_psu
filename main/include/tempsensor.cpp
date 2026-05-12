@@ -3,28 +3,28 @@
 
 namespace
 {
-constexpr uint8_t I2C_SDA = 16;
-constexpr uint8_t I2C_SCL = 17;
-constexpr uint8_t TEMP_SENSOR_ADDR = 0x5E;
+    constexpr uint8_t I2C_SDA = 16;
+    constexpr uint8_t I2C_SCL = 17;
+    constexpr uint8_t TEMP_SENSOR_ADDR = 0x5E;
 
-Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+    Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 
-bool mlxIsReady()
-{
-    Wire.begin(I2C_SDA, I2C_SCL);
-    return mlx.begin(TEMP_SENSOR_ADDR);
-}
-
-float readObjectTempCelsius()
-{
-    float reading = mlx.readObjectTempC();
-    if (isnan(reading))
+    bool mlxIsReady()
     {
-        return NAN;
+        Wire.begin(I2C_SDA, I2C_SCL);
+        return mlx.begin(TEMP_SENSOR_ADDR);
     }
 
-    return reading;
-}
+    float readObjectTempCelsius()
+    {
+        float reading = mlx.readObjectTempC();
+        if (isnan(reading))
+        {
+            return NAN;
+        }
+
+        return reading;
+    }
 }
 
 float AVG_TEMP = 0.0f;
@@ -52,13 +52,14 @@ float takeTempMeasurement()
         {
             sum += reading;
             validSamples++;
-        delay(20);
-    }
+            delay(20);
+        }
 
-    if (validSamples > 0)
-    {
-        AVG_TEMP = sum / validSamples;
-    }
+        if (validSamples > 0)
+        {
+            AVG_TEMP = sum / validSamples;
+        }
 
-    return AVG_TEMP;
+        return AVG_TEMP;
+    }
 }

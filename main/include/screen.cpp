@@ -135,17 +135,17 @@ namespace
 
     void drawProgramConfirmation()
     {
-        tft.setTextSize(2);
+        tft.setTextSize(3);
         drawCenteredStatus(String(programName(selectedProgram)), SPIDER_BLUE);
     }
 
     void drawSvejseActive()
     { // maybe add graph with mA and mV?
-        tft.setTextSize(2);
+        tft.setTextSize(3);
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
-        tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 2);
-        tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 2);
+        tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 1);
+        tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 1);
     }
 
     void drawSvejsningApproved()
@@ -157,14 +157,13 @@ namespace
 
     void drawSvejsningNotApproved()
     {
-        tft.setTextSize(2);
         tft.setTextDatum(MC_DATUM);
         tft.setTextColor(TFT_RED, SPIDER_BG);
-        tft.drawString("IKKE GODKENDT", screenCenterX(), STATUS_Y, 2);
-        tft.setTextSize(1);
-        tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
-        tft.drawString("(#)PROEV IGEN ", screenCenterX(), STATUS_Y + 30, 1);
-        tft.drawString("(1)GEM OG LOG UD", screenCenterX(), STATUS_Y + 50, 1);
+        tft.setTextSize(3);
+        tft.drawString("IKKE GODKENDT", screenCenterX(), STATUS_Y, 1);
+        tft.setTextSize(2);
+        tft.setTextColor(SPIDER_GRAA, SPIDER_BG);
+        tft.drawString("(#)GEM OG LOG UD", screenCenterX(), STATUS_Y + 30, 1);
     }
 
     void drawLogData()
@@ -185,28 +184,37 @@ namespace
     void drawProgramSelection()
     {
         tft.setTextDatum(MC_DATUM);
-        tft.setTextSize(1);
 
+        tft.setTextSize(3);
+        tft.setTextColor(SPIDER_GRAA, SPIDER_BG);
+        tft.drawString(" ________________", screenCenterX(), 40, 1);
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
-        tft.drawString("TEMP: " + String(AVG_TEMP, 1) + "C", screenCenterX(), 10, 2);
-        tft.drawString("(0)SKIFT  (#)OK  (*)TILBAGE", screenCenterX(), 30, 1);
+        tft.drawString(" Valg af program:", screenCenterX(), 30, 1);
 
-        int startY = 60;
+        tft.setTextSize(2);
+        tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+        tft.drawString("TEMP: " + String(AVG_TEMP, 1) + "C", screenCenterX(), 70, 1);
 
-        for (int p = 1; p <= 4; p++)
-        {
-            uint16_t col = (p == selectedProgram) ? TFT_RED : SPIDER_BLUE;
-            tft.setTextColor(col, SPIDER_BG);
+        tft.setTextDatum(MC_DATUM);
+        tft.setTextSize(3);
+        tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+        String currentProg = programName(selectedProgram);
+        tft.drawString(" " + currentProg, 165, 100, 1);
 
-            tft.drawString(programName(p), 160, startY + (p - 1) * 22, 1);
-        }
+        tft.setTextSize(2);
+        tft.setTextColor(SPIDER_GRAA, SPIDER_BG);
+        tft.drawString("< " + String(selectedProgram) + " af 4 >", screenCenterX(), 130, 1);
+
+        tft.setTextSize(2);
+        tft.setTextColor(SPIDER_GRAA, SPIDER_BG);
+        tft.drawString("(0) NAESTE   (#) VAELG", screenCenterX(), 155, 1);
     }
 
     void drawData()
     {
         tft.setTextSize(1);
-        tft.setTextDatum(MC_DATUM); 
-        tft.drawString("//////SVEJSE DATA/////: ", screenCenterX(), 10, 1);
+        tft.setTextDatum(MC_DATUM);
+        tft.drawString("//SVEJSE DATA//: ", screenCenterX(), 10, 1);
         tft.drawString("C: " + String(AVG_TEMP, 1) + " C", screenCenterX(), 30, 1);
         tft.drawString("P: " + String(programName(selectedProgram)), screenCenterX(), 45, 1);
         tft.drawString("T: " + String(svejseDuration / 1000) + " s", screenCenterX(), 60, 1);
@@ -366,12 +374,11 @@ void drawScreen()
     {
         tft.fillScreen(SPIDER_BG);
     }
-    else 
+    else
     {
         tft.fillScreen(SPIDER_BG);
         drawLogo();
     }
-
 
     Serial.println("State changed: " + String((int)lastDrawnState) + " -> " + String((int)currentState));
 
