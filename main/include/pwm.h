@@ -14,6 +14,8 @@
 #define PWM_CHANNEL LEDC_CHANNEL_0
 
 void setupPwm();
+void resetPwmControl();
+void stopPwmOutput();
 void pwmControlStep(float targetCurrentMA, float kp);
 float getCurrentMA();
 float getTargetCurrentMA();
