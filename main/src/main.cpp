@@ -97,12 +97,12 @@ void setup()
 
   setupDatabase();
   setupAuth();
-  setupPwm();
-  setupRFID();
+  //setupPwm();
+  //setupRFID();
   setupTempSensor();
-  setupNumpad();
+  //setupNumpad();
   setupScreen();
-  setupServer();
+  //setupServer();
 
   Serial.println("Starter tasks");
 
