@@ -54,7 +54,7 @@ void auth_interfaceTask(void *pvParameters)
     processAuthenticationInterfaceState();
     processUserInterfaceState();
     drawScreen();
-    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
+    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(100));
   }
 }
 
@@ -78,7 +78,7 @@ void serverTask(void *pvParameters)
   for (;;)
   {
     processServer();
-    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
+    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(100));
   }
 }
 
@@ -97,19 +97,19 @@ void setup()
 
   setupDatabase();
   setupAuth();
-  //setupPwm();
-  //setupRFID();
+  setupPwm();
+  setupRFID();
   setupTempSensor();
-  //setupNumpad();
+  setupNumpad();
   setupScreen();
-  //setupServer();
+  setupServer();
 
   Serial.println("Starter tasks");
 
   // xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 3, &pwmT, 1);
-  xTaskCreatePinnedToCore(auth_interfaceTask, "auth_interface", 16384, NULL, 2, &auth_interfaceT, 1);
+  xTaskCreatePinnedToCore(auth_interfaceTask, "auth_interface", 4096, NULL, 2, &auth_interfaceT, 1);
   // xTaskCreatePinnedToCore(user_interfaceTask, "user_interface", 8192, NULL, 1, &user_interfaceT, 1);
-  xTaskCreatePinnedToCore(serverTask, "server", 6144, NULL, 1, &serverT, 0);
+  xTaskCreatePinnedToCore(serverTask, "server", 4096, NULL, 1, &serverT, 0);
 
   /*==============================================================*/
   // DEBUGGING
@@ -131,6 +131,8 @@ void setup()
 
   DB("users", "UID,USER,PASSWORD");
   databaseRead();
+  DB("svejse_logs","STATUS, CALCULATED_ENERGY, TARGET_ENERGY, AVG_TEMP, SVEJSNING_TIME");
+  databaseRead(); 
 }
 
 void loop()

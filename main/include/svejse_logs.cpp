@@ -55,5 +55,5 @@ bool writeSvejseLog(const String &svejsningResult, const String &calculatedEnerg
     }
     DB(SVEJSE_LOG_TABLE, SVEJSE_LOG_COLUMNS);
     String line = svejsningResult + "," + calculatedEnergy + "," + String(getTargetEnergy()) + "," + avgTemp + "," + String(svejsningTime, 3);
-    return DB(line);
+    return databaseWrite(line);
 }

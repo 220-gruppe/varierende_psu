@@ -52,8 +52,7 @@ float takeTempMeasurement()
         {
             sum += reading;
             validSamples++;
-        }
-        delay(500);
+        delay(20);
     }
 
     if (validSamples > 0)

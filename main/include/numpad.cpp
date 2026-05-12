@@ -3,7 +3,7 @@
 
 namespace
 {
-    constexpr uint8_t MPR121_ADDR = 0x5B;
+    constexpr uint8_t MPR121_ADDR = 0x5A;
 
     Adafruit_MPR121 numpad = Adafruit_MPR121();
     String typed = "";
