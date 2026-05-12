@@ -1,4 +1,5 @@
 #include "rfid.h"
+#include <SPI.h>
 
 namespace
 {
@@ -7,6 +8,10 @@ MFRC522 rc(RFID_SDA, RFID_RST);
 
 void setupRFID()
 {
+    pinMode(RFID_SDA, OUTPUT);
+    digitalWrite(RFID_SDA, HIGH);
+
+    SPI.begin(RFID_SPI_SCK, RFID_SPI_MISO, RFID_SPI_MOSI, RFID_SDA);
     rc.PCD_Init();
 }
 
