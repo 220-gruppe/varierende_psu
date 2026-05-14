@@ -9,27 +9,34 @@ namespace
 {
     TFT_eSPI tft = TFT_eSPI();
 
-    constexpr int LOGO_X = 35;
-    constexpr int LOGO_Y = 10;
-    constexpr int LOGO_WIDTH = 250;
-    constexpr int LOGO_HEIGHT = 77;
-    constexpr int CONTENT_TOP = LOGO_Y + LOGO_HEIGHT + 10;
-    constexpr int STATUS_Y = 110;
-    constexpr int PIN_Y = 140;
+    constexpr int LOGO_X        = 35;
+    constexpr int LOGO_Y        = 10;
+    constexpr int LOGO_WIDTH    = 250;
+    constexpr int LOGO_HEIGHT   = 77;
+    constexpr int CONTENT_TOP   = LOGO_Y + LOGO_HEIGHT + 10;
+    constexpr int STATUS_Y      = 110;
+    constexpr int PIN_Y         = 140;
 
-    constexpr unsigned long ERROR_TIME_MS = 1500;
-    constexpr unsigned long LOGOUT_TIME_MS = 2000;
+    constexpr int BAR_Y         = 150;
+    constexpr int BAR_H         = 10;
+    constexpr int BAR_LEFT      = 20;
+    constexpr int BAR_RIGHT     = 300;
+    constexpr int BAR_W         = BAR_RIGHT - BAR_LEFT;
+
+    constexpr unsigned long ERROR_TIME_MS   = 1500;
+    constexpr unsigned long LOGOUT_TIME_MS  = 2000;
 
     ScreenState currentState = ScreenState::Ready;
     ScreenState baseState = ScreenState::Ready;
     ScreenState lastDrawnState = ScreenState::Ready;
 
-    String pinText = "";
-    String lastDrawnPin = "";
+    String pinText         = "";
+    String lastDrawnPin    = "";
 
-    bool needsRedraw = true;
-    unsigned long temporaryStateUntil = 0;
-    unsigned long remainingMs = 0;
+    bool needsRedraw                    = true;
+
+    unsigned long temporaryStateUntil   = 0;
+    unsigned long remainingMs           = 0;
 
     bool isLogoLess(ScreenState state)
     {
@@ -140,12 +147,47 @@ namespace
     }
 
     void drawSvejseActive()
-    { // maybe add graph with mA and mV?
-        tft.setTextSize(3);
+    { 
+        tft.fillRect(0, CONTENT_TOP, tft.width(), tft.height() - CONTENT_TOP, SPIDER_BG);
+
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
-        tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 1);
-        tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 1);
+        tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 2);
+        // tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 1);
+        
+        float delivered         = getDeliveredEnergyJ();
+        float target            = getTargetEnergy();
+        float progress          = getSvejseProgress();         
+        unsigned long remaining = getPredictedRemainingTime();
+
+        String timeStr = (remaining > 99000) ? "Beregner..." : String(remaining/1000.0f, 1) + "s tilbage";
+        tft.drawString(timeStr, screenCenterX(), PIN_Y, 1);
+
+        tft.setTextSize(1);
+        tft.setTextDatum(ML_DATUM);
+        tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+        tft.drawString(String(delivered, 1) + "J / " + String(target, 1) + "J", BAR_LEFT, PIN_Y + 18, 1);
+
+        tft.fillRoundRect(BAR_LEFT, BAR_Y, BAR_W, BAR_H, 3, 0x5AEB);  
+
+        int fillW = (int)(progress * BAR_W);
+        uint16_t barColor;
+         if (progress < 0.6f)
+            barColor = TFT_GREEN;
+        else if (progress < 0.85f)
+            barColor = TFT_ORANGE;
+        else
+            barColor = TFT_RED;
+
+        if (fillW > 0)
+            tft.fillRoundRect(BAR_LEFT, BAR_Y, fillW, BAR_H, 3, barColor);
+
+            tft.setTextDatum(ML_DATUM);
+        tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+        tft.drawString(String((int)(progress * 100)) + "%", BAR_RIGHT + 6, BAR_Y + BAR_H / 2, 1);
+
+        tft.setTextDatum(MC_DATUM);
+        tft.drawString(String(getCurrentMA(), 0) + "mA  " + String(getShuntVoltageMV(), 1) + "mV", screenCenterX(), BAR_Y + BAR_H + 14, 1);
     }
 
     void drawSvejsningApproved()

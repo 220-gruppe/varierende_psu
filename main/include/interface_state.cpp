@@ -24,7 +24,7 @@ namespace
         Choice
     };
 
-    constexpr unsigned long INACTIVITY_TIMEOUT_MS = 240000;
+    constexpr unsigned long INACTIVITY_TIMEOUT_MS = 900000; // 15 minutes
     constexpr unsigned long TEMP_DISPLAY_MS = 3000;
     unsigned long stateTimer = 0;
 
@@ -235,21 +235,31 @@ namespace
 
     void handleSvejseState()
     {
-        unsigned long elapsed = millis() - svejseStartTime;
-        unsigned long remaining = (elapsed < svejseDuration) ? (svejseDuration - elapsed) : 0;
-        setRemainingTime(remaining);
         setScreenState(ScreenState::SvejseActive);
+        forceRedraw();
 
         if (svejseHandler())
         {
-        Serial.println("svejseHandler returned true");
-        stopSvejse();
-        Serial.println("stopSvejse done");
-        saveSvejsningResult();
-        Serial.println("saveSvejsningResult done");
-        currentUserInterfaceState = UserInterfaceState::Result;
-        Serial.println("Transitioning to Result");
+            stopSvejse();
+            saveSvejsningResult();
+            currentUserInterfaceState = UserInterfaceState::Result;
         }
+
+        // unsigned long elapsed = millis() - svejseStartTime;
+        // unsigned long remaining = (elapsed < svejseDuration) ? (svejseDuration - elapsed) : 0;
+        // setRemainingTime(remaining);
+        // setScreenState(ScreenState::SvejseActive);
+
+        // if (svejseHandler())
+        // {
+        // Serial.println("svejseHandler returned true");
+        // stopSvejse();
+        // Serial.println("stopSvejse done");
+        // saveSvejsningResult();
+        // Serial.println("saveSvejsningResult done");
+        // currentUserInterfaceState = UserInterfaceState::Result;
+        // Serial.println("Transitioning to Result");
+        // }
     }
 
     void handleResultState()

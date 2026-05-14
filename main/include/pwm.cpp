@@ -6,15 +6,19 @@
 namespace
 {
 constexpr adc1_channel_t SHUNT_ADC_CHANNEL = ADC1_CHANNEL_2; // GPIO3 on ESP32-S3.
-constexpr int ADC_SAMPLES = 50;
-constexpr float ADC_MAX_RAW = 4095.0f;
-constexpr float ADC_0DB_MAX_MV = 950.0f;
+constexpr int ADC_SAMPLES       = 50;
+constexpr float ADC_MAX_RAW     = 4095.0f;
+constexpr float ADC_0DB_MAX_MV  = 950.0f;
 
-float currentDuty = 0.0f;
-unsigned long lastPrint = 0;
-float currentMA = 0.0f;
+float currentDuty         = 0.0f;
+unsigned long lastPrint   = 0;
+float currentMA           = 0.0f;
 float lastTargetCurrentMA = 0.0f;
-float shuntVoltageMV = 0.0f;
+float shuntVoltageMV      = 0.0f;
+
+float energyDeliveredJ          = 0.0f;
+unsigned long lastEnergyUpdate  = 0;
+bool accumulatorActive          = false;
 
 uint16_t readShuntAdcRegister()
 {
@@ -78,6 +82,20 @@ void stopPwmOutput()
   ledc_update_duty(PWM_MODE, PWM_CHANNEL);
 }
 
+void resetEnergyAccumulator()
+{
+  energyDeliveredJ  = 0.0f;
+  lastEnergyUpdate  = 0;
+  accumulatorActive = false;
+}
+
+void startEnergyAccumulator()
+{
+  energyDeliveredJ  = 0.0f;
+  lastEnergyUpdate  = millis();
+  accumulatorActive = true;
+}
+
 void pwmControlStep(float targetCurrentMA, float kp)
 {
   lastTargetCurrentMA = targetCurrentMA;
@@ -108,6 +126,18 @@ void pwmControlStep(float targetCurrentMA, float kp)
   ledc_set_duty(PWM_MODE, PWM_CHANNEL, static_cast<uint32_t>(currentDuty));
   ledc_update_duty(PWM_MODE, PWM_CHANNEL);
 
+  if (accumulatorActive)
+  {
+    unsigned long now = millis();
+    if (lastEnergyUpdate > 0)
+   {
+    float dt = (now - lastEnergyUpdate) / 1000.0f;  
+    float I = currentMA / 1000.0f;
+    energyDeliveredJ += I*I*SHUNT_RESISTOR_OHM*dt;
+   }
+   lastEnergyUpdate = now;
+  }
+
   if (millis() - lastPrint > 500)
   {
     lastPrint = millis();
@@ -120,6 +150,8 @@ void pwmControlStep(float targetCurrentMA, float kp)
     Serial.print("mA | PWM Duty: ");
     Serial.print(currentDutyPct);
     Serial.println("%");
+    Serial.print(energyDeliveredJ);
+    Serial.println("Energy: ");
   }
 }
 
@@ -136,4 +168,9 @@ float getTargetCurrentMA()
 float getShuntVoltageMV()
 {
   return shuntVoltageMV;
+}
+
+float getDeliveredEnergyJ()
+{
+  return energyDeliveredJ;
 }
