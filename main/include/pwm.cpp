@@ -1,5 +1,6 @@
 #include "pwm.h"
 #include "programs.h"
+#include "svejse_logs.h"
 #include "driver/adc.h"
 #include "soc/sens_reg.h"
 #include "soc/soc.h"
@@ -84,14 +85,14 @@ void pwmControlStep(float targetCurrentMA, float kp)
 {
   lastTargetCurrentMA = targetCurrentMA;
   const uint32_t pwmMaxDuty = (1UL << PWM_RESOLUTION) - 1;
-  uint32_t sumMV = 0;
+  uint32_t sumRaw = 0;
 
-  for (int i = 0; i < 50; i++)
+  for (int i = 0; i < ADC_SAMPLES; i++)
   {
-    sumMV += analogReadMilliVolts(SHUNT_PIN);
+    sumRaw += readShuntAdcRegister();
   }
 
-  shuntVoltageMV = sumMV / 50.0f;
+  shuntVoltageMV = adcRawToMilliVolts(sumRaw / ADC_SAMPLES);
   currentMA = shuntVoltageMV / SHUNT_RESISTOR_OHM;
 
   if (svejseAktiv)
@@ -101,6 +102,7 @@ void pwmControlStep(float targetCurrentMA, float kp)
 
     float watts = voltageBUS * (currentMA / 1000.0f);
     totalJoule += watts * 0.02; // 20ms = 0.02s
+    appendSvejsningMeasurement(millis(), currentMA, voltageBUS, totalJoule);
 
     float currentTarget = getTargetJoule();
     if (totalJoule >= currentTarget && currentTarget > 0.0f) {

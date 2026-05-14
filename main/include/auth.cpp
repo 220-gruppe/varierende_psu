@@ -188,6 +188,11 @@ String currentUserName()
     return user;
 }
 
+String currentUserUID()
+{
+    return uid;
+}
+
 void resetAuthTimer()
 {
     lastAuthActivity = millis();

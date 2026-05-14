@@ -1,6 +1,8 @@
+#include "svejse_logs.h"
 #include "programs.h"
 #include "tempsensor.h"
 #include "pwm.h"
+#include "auth.h"
 
 const unsigned long svejseTime_1 = 50000; // test værdi, adjust l8r
 const unsigned long svejseTime_2 = 60000;
@@ -82,24 +84,27 @@ void startSvejse()
 {
     svejseDuration = getSvejseTime(); 
     svejseStartTime = millis();
-    svejseAktiv = true;
     resetEnergy();
+
+    if (!initializeSvejsningLog(currentUserUID(), selectedProgram, svejseStartTime, getTargetJoule()))
+    {
+        Serial.println("Kunne ikke oprette svejselog - svejsning startes ikke");
+        svejseAktiv = false;
+        return;
+    }
+
+    svejseAktiv = true;
     enableSvejsning();
     Serial.print("startSvejse called. Duration: ");
     Serial.print(svejseDuration);
     Serial.print(" startTime: ");
     Serial.println(svejseStartTime);
-
-    
-    // Placeholder: Activate welding output pin here
-    // add turn on svejsning
 }
 
 void stopSvejse()
 {
     svejseAktiv = false;
     disableSvejsning();
-    // TODO: deactivate svejsning / output pin here
 }
 
 bool svejseHandler()

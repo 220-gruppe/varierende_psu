@@ -132,10 +132,6 @@ void setup()
     Serial.println("serverTask OK");
   /*==============================================================*/
 
-  // DB("users", "UID,USER,PASSWORD");
-  // databaseRead();
-  DB("svejse_logs","STATUS, CALCULATED_ENERGY, TARGET_ENERGY, AVG_TEMP, SVEJSNING_TIME");
-  databaseRead(); 
 }
 
 void loop()
