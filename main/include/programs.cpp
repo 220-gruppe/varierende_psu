@@ -2,11 +2,17 @@
 #include "tempsensor.h"
 #include "pwm.h"
 
-// const unsigned long svejseTime_1 = 50000; // test værdi, adjust l8r
-// const unsigned long svejseTime_2 = 60000;
-// const unsigned long svejseTime_3 = 70000;
-// const unsigned long svejseTime_4 = 183000;
+const float targetJoule_1   = 500.0f;
+const float targetJoule_2   = 1000.0f;
+const float targetJoule_3   = 1500.0f;
+const float targetJoule_4   = 2000.0f;
 
+const int NUM_PROGRAMS = 4;
+
+int           selectedProgram = 0;
+unsigned long svejseStartTime = 0;
+unsigned long svejseDuration  = 0;
+bool          svejseAktiv     = false;
 
 const Program PROGRAMS[] = {
     { "Program 1 - Standard" , 0.3729f, 0.032f, 4300.0f }, 
@@ -14,12 +20,8 @@ const Program PROGRAMS[] = {
     { "Program 3 - XXXXXXXX" , 0.0f, 0.0f, 0.0f },
     { "Program 4 - XXXXXXXX" , 0.0f, 0.0f, 0.0f },
 };
-const int NUM_PROGRAMS = sizeof(PROGRAMS) / sizeof(PROGRAMS[0]);
+// const int NUM_PROGRAMS = sizeof(PROGRAMS) / sizeof(PROGRAMS[0]);
 
-int           selectedProgram = 0;
-unsigned long svejseStartTime = 0;
-unsigned long svejseDuration  = 0;
-bool          svejseAktiv     = false;
  
 // unsigned long getSvejseTime()
 // {
@@ -55,19 +57,53 @@ bool          svejseAktiv     = false;
 //     }
 // }
 
-const Program& currentProgram() 
+// const Program& currentProgram() 
+// {
+//     int index = constrain(selectedProgram - 1, 0, NUM_PROGRAMS -1);
+//     return PROGRAMS[index];
+// }
+
+float getTargetJoule()
 {
-    int index = constrain(selectedProgram - 1, 0, NUM_PROGRAMS -1);
-    return PROGRAMS[index];
+    switch (selectedProgram)
+    {
+    case 1:
+        return targetJoule_1;
+    case 2:
+        return targetJoule_2;
+    case 3:
+        return targetJoule_3;
+    case 4:
+        return targetJoule_4;
+    default:
+        return 0.0f;
+    }
 }
 
-const char* programName(int p)
+const char *programName(int p)
 {
-    if (p < 1 || p > NUM_PROGRAMS) return "Intet valgt";
-    return PROGRAMS[p-1].name;
+    switch (p)
+    {
+    case 1:
+        return "Program 1 - Standard";
+    case 2:
+        return "Program 2 - XXXXXXXX";
+    case 3:
+        return "Program 3 - XXXXXXXX";
+    case 4:
+        return "Program 4 - XXXXXXXX";
+    default:
+        return "Intet valgt";
+    }
 }
 
-bool confirmPRogram()
+// const char *programName(int p)
+// {
+//     if (p < 1 || p > NUM_PROGRAMS) return "Intet valgt";
+//     return PROGRAMS[p-1].name;
+// }
+
+bool confirmProgram()
 {
  return (selectedProgram >= 1 && selectedProgram <= NUM_PROGRAMS);
 }
@@ -87,24 +123,46 @@ void cycleProgram()
 //     selectedProgram = (selectedProgram % 4) + 1;
 // }
 
+// float getTargetEnergy()
+// {
+//     const Program& p = currentProgram();
+//     return p.mass_kg * 500.0f * (p.targetTemp_C - AVG_TEMP); 
+// }
 
 float getTargetEnergy()
 {
-    const Program& p = currentProgram();
-    return p.mass_kg * 500.0f * (p.targetTemp_C - AVG_TEMP); 
+    return getTargetJoule();
 }
+
+// float getSvejseProgress()
+// {
+//     float target = getTargetEnergy();
+//     if (target <= 0.0f) return 1.0f;
+//     return constrain(getDeliveredEnergyJ() / target, 0.0f, 1.0f);
+// }
 
 float getSvejseProgress()
 {
-    float target = getTargetEnergy();
+    float target = getTargetJoule();
     if (target <= 0.0f) return 1.0f;
     return constrain(getDeliveredEnergyJ() / target, 0.0f, 1.0f);
 }
 
+// unsigned long getPredictedRemainingTime()
+// {
+//     float I = getCurrentMA() / 1000.0f;
+//     float R = currentProgram().resistance_ohm;
+//     float power = I * I * R;
+//     if (power < 0.001f) return 99999;
+//     float E_remaining = getTargetEnergy() - getDeliveredEnergyJ();
+//     if (E_remaining <= 0.0f) return 0;
+//     return (unsigned long)((E_remaining / power) * 1000.0f);
+// }
+
 unsigned long getPredictedRemainingTime()
 {
     float I = getCurrentMA() / 1000.0f;
-    float R = currentProgram().resistance_ohm;
+    float R = PROGRAMS[selectedProgram - 1].resistance_ohm;
     float power = I * I * R;
     if (power < 0.001f) return 99999;
     float E_remaining = getTargetEnergy() - getDeliveredEnergyJ();
@@ -118,6 +176,8 @@ void startSvejse()
     svejseStartTime = millis();
     svejseDuration = 0;
     svejseAktiv = true;
+    resetEnergy();
+    enableSvejsning();
     Serial.print("startSvejse called. Duration: ");
     Serial.print(svejseDuration);
     Serial.print(" startTime: ");
@@ -125,6 +185,7 @@ void startSvejse()
 
     startEnergyAccumulator();
 
+    
     // Placeholder: Activate welding output pin here
     // add turn on svejsning
 }
@@ -155,7 +216,10 @@ void stopSvejse()
 {
     svejseAktiv = false;
     // stopPwmOutput();
+    disableSvejsning();
+    // TODO: deactivate svejsning / output pin here
 }
+
 
 
 

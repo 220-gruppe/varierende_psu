@@ -22,12 +22,12 @@ float calculatedOutputEnergy()
 
 float getTargetEnergy()
 {
-    return 0.032f * 500.0f * (4300.0f - AVG_TEMP); // thicker wire for mass (0.032)
+    return getTargetJoule();
 }
 
 void saveSvejsningResult()
 {
-    lastStatus = (calculatedOutputEnergy() >= getTargetEnergy())
+    lastStatus = (getTotalJoule() >= getTargetJoule())
                      ? SvejsningStatus::Approved
                      : SvejsningStatus::NotApproved;
 }
@@ -40,7 +40,7 @@ bool wasApproved()
 void LogSvejseData()
 {
     String svejsningResult = wasApproved() ? "GODKENDT" : "IKKE GODKENDT";
-    String calculatedEnergy = String(calculatedOutputEnergy(), 2);
+    String calculatedEnergy = String(getTotalJoule(), 2);
     String avgTemp = String(AVG_TEMP, 2);
     float svejsningTime = svejseDuration / 1000.0f;
 
@@ -54,6 +54,6 @@ bool writeSvejseLog(const String &svejsningResult, const String &calculatedEnerg
         return false;
     }
     DB(SVEJSE_LOG_TABLE, SVEJSE_LOG_COLUMNS);
-    String line = svejsningResult + "," + calculatedEnergy + "," + String(getTargetEnergy()) + "," + avgTemp + "," + String(svejsningTime, 3);
+    String line = svejsningResult + "," + calculatedEnergy + "," + String(getTargetJoule()) + "," + avgTemp + "," + String(svejsningTime, 3);
     return databaseWrite(line);
 }

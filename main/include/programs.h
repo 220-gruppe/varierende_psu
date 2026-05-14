@@ -28,5 +28,7 @@ void startSvejse();
 bool svejseHandler();
 void stopSvejse();
 
+unsigned long getSvejseTime();
+float getTargetJoule();
 
 #endif

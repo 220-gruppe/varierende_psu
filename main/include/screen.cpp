@@ -4,6 +4,7 @@
 #include "programs.h"
 #include "svejse_logs.h"
 #include "pwm.h"
+#include "interface_state.h"
 
 namespace
 {
@@ -146,6 +147,53 @@ namespace
         drawCenteredStatus(String(programName(selectedProgram)), SPIDER_BLUE);
     }
 
+    // void drawSvejseActive()
+    // { 
+    //     tft.fillRect(0, CONTENT_TOP, tft.width(), tft.height() - CONTENT_TOP, SPIDER_BG);
+
+    //     tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+    //     tft.setTextDatum(MC_DATUM);
+    //     tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 2);
+    //     // tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 1);
+        
+    //     float delivered         = getDeliveredEnergyJ();
+    //     float target            = getTargetEnergy();
+    //     float progress          = getSvejseProgress();         
+    //     unsigned long remaining = getPredictedRemainingTime();
+
+    //     String timeStr = (remaining > 99000) ? "Beregner..." : String(remaining/1000.0f, 1) + "s tilbage";
+    //     tft.drawString(timeStr, screenCenterX(), PIN_Y, 1);
+
+    //     tft.setTextSize(1);
+    //     tft.setTextDatum(ML_DATUM);
+    //     tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+    //     tft.drawString(String(delivered, 1) + "J / " + String(target, 1) + "J", BAR_LEFT, PIN_Y + 18, 1);
+
+    //     tft.fillRoundRect(BAR_LEFT, BAR_Y, BAR_W, BAR_H, 3, 0x5AEB);  
+
+    //     int fillW = (int)(progress * BAR_W);
+    //     uint16_t barColor;
+    //      if (progress < 0.6f)
+    //         barColor = TFT_GREEN;
+    //     else if (progress < 0.85f)
+    //         barColor = TFT_ORANGE;
+    //     else
+    //         barColor = TFT_RED;
+
+    //     if (fillW > 0)
+    //         tft.fillRoundRect(BAR_LEFT, BAR_Y, fillW, BAR_H, 3, barColor);
+
+    //         tft.setTextDatum(ML_DATUM);
+    //     tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+    //     tft.drawString(String((int)(progress * 100)) + "%", BAR_RIGHT + 6, BAR_Y + BAR_H / 2, 1);
+
+    //     tft.setTextDatum(MC_DATUM);
+    //     tft.drawString(String(getCurrentMA(), 0) + "mA  " + String(getShuntVoltageMV(), 1) + "mV", screenCenterX(), BAR_Y + BAR_H + 14, 1);
+    //     tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 1);
+    //     tft.drawString(String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y, 1);
+    // }
+
+    // ...existing code...
     void drawSvejseActive()
     { 
         tft.fillRect(0, CONTENT_TOP, tft.width(), tft.height() - CONTENT_TOP, SPIDER_BG);
@@ -153,10 +201,9 @@ namespace
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 2);
-        // tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 1);
-        
+
         float delivered         = getDeliveredEnergyJ();
-        float target            = getTargetEnergy();
+        float target            = getTargetJoule();
         float progress          = getSvejseProgress();         
         unsigned long remaining = getPredictedRemainingTime();
 
@@ -172,7 +219,7 @@ namespace
 
         int fillW = (int)(progress * BAR_W);
         uint16_t barColor;
-         if (progress < 0.6f)
+        if (progress < 0.6f)
             barColor = TFT_GREEN;
         else if (progress < 0.85f)
             barColor = TFT_ORANGE;
@@ -182,12 +229,13 @@ namespace
         if (fillW > 0)
             tft.fillRoundRect(BAR_LEFT, BAR_Y, fillW, BAR_H, 3, barColor);
 
-            tft.setTextDatum(ML_DATUM);
+        tft.setTextDatum(ML_DATUM);
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.drawString(String((int)(progress * 100)) + "%", BAR_RIGHT + 6, BAR_Y + BAR_H / 2, 1);
 
         tft.setTextDatum(MC_DATUM);
         tft.drawString(String(getCurrentMA(), 0) + "mA  " + String(getShuntVoltageMV(), 1) + "mV", screenCenterX(), BAR_Y + BAR_H + 14, 1);
+        tft.drawString(String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y, 1);
     }
 
     void drawSvejsningApproved()
@@ -260,8 +308,8 @@ namespace
         tft.drawString("C: " + String(AVG_TEMP, 1) + " C", screenCenterX(), 30, 1);
         tft.drawString("P: " + String(programName(selectedProgram)), screenCenterX(), 45, 1);
         tft.drawString("T: " + String(svejseDuration / 1000) + " s", screenCenterX(), 60, 1);
-        tft.drawString("E: " + String(calculatedOutputEnergy(), 1) + " J", screenCenterX(), 75, 1);
-        tft.drawString("M: " + String(getTargetEnergy(), 1) + " J", screenCenterX(), 90, 1);
+        tft.drawString("E: " + String(getTotalJoule(), 1) + " J", screenCenterX(), 75, 1);
+        tft.drawString("M: " + String(getTargetJoule(), 1) + " J", screenCenterX(), 90, 1);
         bool approved = wasApproved();
         tft.setTextColor(approved ? TFT_GREEN : TFT_RED, SPIDER_BG);
         tft.drawString(approved ? "GODKENDT" : "IKKE GODKENDT", screenCenterX(), 110, 1);
@@ -390,7 +438,7 @@ void setRemainingTime(unsigned long ms)
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 2);
-        tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 2);
+        tft.drawString(String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y, 2);
     }
 }
 

@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
-const int pwmPin = 12;
-const int shutdown = 11;
-const int shuntPin = 13;
+const int pwmPin = 1;
+const int shutdown = 2;
+const int shuntPin = 3;
 const int freq = 50000;
 const int ledChannel = 0;
 const int resolution = 9;
@@ -43,7 +43,7 @@ void loop()
   if (currentDuty > 511) currentDuty = 511;
   if (currentDuty < 0) currentDuty = 0;
 
-  ledcWrite(ledChannel, (int)currentDuty);
+  ledcWrite(ledChannel, (int)255);
 
 
   Serial.print("ADC: ");

@@ -9,6 +9,7 @@
 #include "programs.h"
 #include "tempsensor.h"
 #include "svejse_logs.h"
+#include "pwm.h"
 
 namespace
 {
