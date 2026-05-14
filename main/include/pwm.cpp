@@ -1,8 +1,16 @@
 #include "pwm.h"
 #include "programs.h"
+#include "driver/adc.h"
+#include "soc/sens_reg.h"
+#include "soc/soc.h"
 
 namespace
 {
+constexpr adc1_channel_t SHUNT_ADC_CHANNEL = ADC1_CHANNEL_2; // GPIO3 on ESP32-S3.
+constexpr int ADC_SAMPLES = 50;
+constexpr float ADC_MAX_RAW = 4095.0f;
+constexpr float ADC_0DB_MAX_MV = 950.0f;
+
 float currentDuty = 255.0f;
 unsigned long lastPrint = 0;
 float currentMA = 0.0f;
@@ -13,6 +21,27 @@ float shuntVoltageMV = 0.0f;
 float totalJoule = 0.0;
 bool reachedTarget = false;
 unsigned long lastEnergyUpdate = 0;
+
+uint16_t readShuntAdcRegister()
+{
+  CLEAR_PERI_REG_MASK(SENS_SAR_MEAS1_CTRL2_REG, SENS_MEAS1_START_SAR);
+  SET_PERI_REG_MASK(SENS_SAR_MEAS1_CTRL2_REG, SENS_MEAS1_START_FORCE);
+  SET_PERI_REG_MASK(SENS_SAR_MEAS1_CTRL2_REG, SENS_MEAS1_START_SAR);
+
+  while (!(GET_PERI_REG_MASK(SENS_SAR_MEAS1_CTRL2_REG, SENS_MEAS1_DONE_SAR)))
+  {
+  }
+
+  return GET_PERI_REG_BITS2(
+      SENS_SAR_MEAS1_CTRL2_REG,
+      SENS_MEAS1_DATA_SAR_M,
+      SENS_MEAS1_DATA_SAR_S);
+}
+
+float adcRawToMilliVolts(uint16_t raw)
+{
+  return (raw / ADC_MAX_RAW) * ADC_0DB_MAX_MV;
+}
 }
 
 void setupPwm()
@@ -22,8 +51,9 @@ void setupPwm()
   digitalWrite(SHUTDOWN_PIN, LOW);  // Shutdown pin LOW ved startup (gate driver disabled)
   
   pinMode(SHUNT_PIN, INPUT);
-  analogReadResolution(12);
-  analogSetPinAttenuation(SHUNT_PIN, ADC_0db);
+  adc1_config_width(ADC_WIDTH_BIT_12);
+  adc1_config_channel_atten(SHUNT_ADC_CHANNEL, ADC_ATTEN_DB_0);
+  adc1_get_raw(SHUNT_ADC_CHANNEL);
   analogSetPinAttenuation(VOLTAGE_ADC, ADC_11db);
 
 
@@ -160,4 +190,3 @@ void disableSvejsning() {
   ledc_update_duty(PWM_MODE, PWM_CHANNEL);
   Serial.println("Svejsning DISABLED (Shutdown pin LOW, PWM = 0)");
 }
-
