@@ -74,6 +74,7 @@ namespace
 
     void drawCenteredStatus(const String &text, uint16_t color, int y = STATUS_Y)
     {
+        tft.setTextSize(3);
         tft.setTextColor(color, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString(text, screenCenterX(), y, 1);
@@ -179,6 +180,7 @@ namespace
         tft.setTextDatum(MC_DATUM);
         tft.drawString("(*)NY SVEJSNING", screenCenterX(), STATUS_Y);
         tft.drawString("(1)AFSLUT OG LOGUD", screenCenterX(), STATUS_Y + 30);
+        tft.setTextSize(2);
     }
 
     // USER SCREENS WITHOUT LOGO ========================================================================================
