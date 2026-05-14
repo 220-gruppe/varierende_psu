@@ -84,14 +84,14 @@ void pwmControlStep(float targetCurrentMA, float kp)
 {
   lastTargetCurrentMA = targetCurrentMA;
   const uint32_t pwmMaxDuty = (1UL << PWM_RESOLUTION) - 1;
-  uint32_t sumRaw = 0;
+  uint32_t sumMV = 0;
 
-  for (int i = 0; i < ADC_SAMPLES; i++)
+  for (int i = 0; i < 50; i++)
   {
-    sumRaw += readShuntAdcRegister();
+    sumMV += analogReadMilliVolts(SHUNT_PIN);
   }
 
-  shuntVoltageMV = adcRawToMilliVolts(sumRaw / ADC_SAMPLES);
+  shuntVoltageMV = sumMV / 50.0f;
   currentMA = shuntVoltageMV / SHUNT_RESISTOR_OHM;
 
   if (svejseAktiv)
