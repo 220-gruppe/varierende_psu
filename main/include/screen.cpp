@@ -4,6 +4,7 @@
 #include "programs.h"
 #include "svejse_logs.h"
 #include "pwm.h"
+#include "interface_state.h"
 
 namespace
 {
@@ -145,7 +146,7 @@ namespace
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 1);
-        tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 1);
+        tft.drawString(String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y, 1);
     }
 
     void drawSvejsningApproved()
@@ -218,8 +219,8 @@ namespace
         tft.drawString("C: " + String(AVG_TEMP, 1) + " C", screenCenterX(), 30, 1);
         tft.drawString("P: " + String(programName(selectedProgram)), screenCenterX(), 45, 1);
         tft.drawString("T: " + String(svejseDuration / 1000) + " s", screenCenterX(), 60, 1);
-        tft.drawString("E: " + String(calculatedOutputEnergy(), 1) + " J", screenCenterX(), 75, 1);
-        tft.drawString("M: " + String(getTargetEnergy(), 1) + " J", screenCenterX(), 90, 1);
+        tft.drawString("E: " + String(getTotalJoule(), 1) + " J", screenCenterX(), 75, 1);
+        tft.drawString("M: " + String(getTargetJoule(), 1) + " J", screenCenterX(), 90, 1);
         bool approved = wasApproved();
         tft.setTextColor(approved ? TFT_GREEN : TFT_RED, SPIDER_BG);
         tft.drawString(approved ? "GODKENDT" : "IKKE GODKENDT", screenCenterX(), 110, 1);
@@ -348,7 +349,7 @@ void setRemainingTime(unsigned long ms)
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 2);
-        tft.drawString(String(remainingMs / 1000.0f, 1) + "S TILBAGE", screenCenterX(), PIN_Y, 2);
+        tft.drawString(String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y, 2);
     }
 }
 

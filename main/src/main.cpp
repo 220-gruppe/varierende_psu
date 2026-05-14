@@ -26,8 +26,8 @@
 #define I2C_SCL 17
 
 float heatInput = 70000; // aendres til noget fra sensor
-float targetCurrentMA = 5.0;
-float Kp = 1.1;
+float targetCurrentMA = 1500.0;
+float Kp = 0.1;
 
 TaskHandle_t auth_interfaceT = nullptr;
 // TaskHandle_t user_interfaceT = nullptr;
@@ -41,7 +41,7 @@ void pwmTask(void *pvParameters)
   for (;;)
   {
     pwmControlStep(targetCurrentMA, Kp);
-    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(10));
+    xTaskDelayUntil(&lastWake, pdMS_TO_TICKS(20));
   }
 }
 
@@ -88,6 +88,9 @@ void setup()
   delay(3000);
   Serial.println("Boot startet");
 
+  pinMode(15,OUTPUT);
+  digitalWrite(15, HIGH); 
+
   // Start SPI
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
 
@@ -106,7 +109,7 @@ void setup()
 
   Serial.println("Starter tasks");
 
-  // xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 3, &pwmT, 1);
+  xTaskCreatePinnedToCore(pwmTask, "pwm", 2048, NULL, 3, &pwmT, 1);
   xTaskCreatePinnedToCore(auth_interfaceTask, "auth_interface", 4096, NULL, 2, &auth_interfaceT, 1);
   // xTaskCreatePinnedToCore(user_interfaceTask, "user_interface", 8192, NULL, 1, &user_interfaceT, 1);
   xTaskCreatePinnedToCore(serverTask, "server", 4096, NULL, 1, &serverT, 0);
@@ -129,8 +132,8 @@ void setup()
     Serial.println("serverTask OK");
   /*==============================================================*/
 
-  DB("users", "UID,USER,PASSWORD");
-  databaseRead();
+  // DB("users", "UID,USER,PASSWORD");
+  // databaseRead();
   DB("svejse_logs","STATUS, CALCULATED_ENERGY, TARGET_ENERGY, AVG_TEMP, SVEJSNING_TIME");
   databaseRead(); 
 }

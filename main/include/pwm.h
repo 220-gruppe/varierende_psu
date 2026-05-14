@@ -5,6 +5,7 @@
 #include <driver/ledc.h>
 
 #define PWM_GPIO 1
+#define SHUTDOWN_PIN 2
 #define SHUNT_PIN 3
 #define SHUNT_RESISTOR_OHM 0.1055
 #define PWM_FREQ_HZ 50000
@@ -12,6 +13,7 @@
 #define PWM_MODE LEDC_LOW_SPEED_MODE
 #define PWM_TIMER LEDC_TIMER_0
 #define PWM_CHANNEL LEDC_CHANNEL_0
+#define VOLTAGE_ADC 18
 
 void setupPwm();
 void resetPwmControl();
@@ -20,5 +22,13 @@ void pwmControlStep(float targetCurrentMA, float kp);
 float getCurrentMA();
 float getTargetCurrentMA();
 float getShuntVoltageMV();
+float readVoltage();
+float calculatePowerW();
+void resetEnergy();
+float getTotalJoule();
+bool hasReachedTarget();
+void enableSvejsning();
+void disableSvejsning();
+
 
 #endif
