@@ -30,7 +30,8 @@ namespace
 
     bool needsRedraw = true;
     unsigned long temporaryStateUntil = 0;
-    unsigned long remainingMs = 0;
+    unsigned long weldElapsedMs = 0;
+    unsigned long weldTotalMs = 0;
 
     bool isLogoLess(ScreenState state)
     {
@@ -78,6 +79,11 @@ namespace
         tft.setTextColor(color, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString(text, screenCenterX(), y, 1);
+    }
+
+    String secondsText(unsigned long ms)
+    {
+        return String(ms / 1000) + " s";
     }
 
     // AUTH SCREENS ========================================================================================
@@ -143,11 +149,13 @@ namespace
 
     void drawSvejseActive()
     { // maybe add graph with mA and mV?
-        tft.setTextSize(3);
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
+        tft.setTextSize(2);
         tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 1);
-        tft.drawString(String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y, 1);
+        tft.drawString("TID: " + secondsText(weldElapsedMs) + "/" + secondsText(weldTotalMs), screenCenterX(), STATUS_Y + 25, 1);
+        tft.drawString("mA: " + String(getCurrentMA(), 0) + "/" + String(getSvejseTargetCurrentMA(), 0), screenCenterX(), PIN_Y, 1);
+        tft.drawString("E: " + String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y + 22, 1);
     }
 
     void drawSvejsningApproved()
@@ -165,7 +173,15 @@ namespace
         tft.drawString("IKKE GODKENDT", screenCenterX(), STATUS_Y, 1);
         tft.setTextSize(2);
         tft.setTextColor(SPIDER_GRAA, SPIDER_BG);
-        tft.drawString("(#)GEM OG LOG UD", screenCenterX(), STATUS_Y + 30, 1);
+        if (hasWeldFault())
+        {
+            tft.drawString(String(weldFaultText()), screenCenterX(), STATUS_Y + 30, 1);
+            tft.drawString("(#)GEM OG LOG UD", screenCenterX(), STATUS_Y + 55, 1);
+        }
+        else
+        {
+            tft.drawString("(#)GEM OG LOG UD", screenCenterX(), STATUS_Y + 30, 1);
+        }
     }
 
     void drawLogData()
@@ -202,15 +218,19 @@ namespace
         tft.setTextSize(3);
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         String currentProg = programName(selectedProgram);
-        tft.drawString(" " + currentProg, 165, 100, 1);
+        tft.drawString(" " + currentProg, 165, 95, 1);
+
+        tft.setTextSize(1);
+        tft.setTextColor(SPIDER_GRAA, SPIDER_BG);
+        tft.drawString("mA: " + String(getSvejseTargetCurrentMA(), 0) + "  T: " + secondsText(getSvejseTime()), screenCenterX(), 120, 1);
 
         tft.setTextSize(2);
         tft.setTextColor(SPIDER_GRAA, SPIDER_BG);
-        tft.drawString("< " + String(selectedProgram) + " af 4 >", screenCenterX(), 130, 1);
+        tft.drawString("< " + String(selectedProgram) + " af " + String(WELD_PROGRAM_COUNT) + " >", screenCenterX(), 140, 1);
 
         tft.setTextSize(2);
         tft.setTextColor(SPIDER_GRAA, SPIDER_BG);
-        tft.drawString("(0) NAESTE   (#) VAELG", screenCenterX(), 155, 1);
+        tft.drawString("(0) NAESTE   (#) VAELG", screenCenterX(), 160, 1);
     }
 
     void drawData()
@@ -220,12 +240,12 @@ namespace
         tft.drawString("//SVEJSE DATA//: ", screenCenterX(), 10, 1);
         tft.drawString("C: " + String(AVG_TEMP, 1) + " C", screenCenterX(), 30, 1);
         tft.drawString("P: " + String(programName(selectedProgram)), screenCenterX(), 45, 1);
-        tft.drawString("T: " + String(svejseDuration / 1000) + " s", screenCenterX(), 60, 1);
+        tft.drawString("T: " + secondsText(getSvejseElapsedTime()), screenCenterX(), 60, 1);
         tft.drawString("E: " + String(getTotalJoule(), 1) + " J", screenCenterX(), 75, 1);
-        tft.drawString("M: " + String(getTargetJoule(), 1) + " J", screenCenterX(), 90, 1);
+        tft.drawString("mA: " + String(getSvejseTargetCurrentMA(), 0), screenCenterX(), 90, 1);
         bool approved = wasApproved();
         tft.setTextColor(approved ? TFT_GREEN : TFT_RED, SPIDER_BG);
-        tft.drawString(approved ? "GODKENDT" : "IKKE GODKENDT", screenCenterX(), 110, 1);
+        tft.drawString(approved ? "GODKENDT" : (hasWeldFault() ? String(weldFaultText()) : "IKKE GODKENDT"), screenCenterX(), 110, 1);
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextSize(2);
         tft.setTextDatum(MC_DATUM);
@@ -341,9 +361,11 @@ void screenPinPreview(const String &typedPin)
     updatePinPreview(typedPin);
 }
 
-void setRemainingTime(unsigned long ms)
+void setSvejseTime(unsigned long elapsedMs, unsigned long totalMs)
 {
-    remainingMs = ms;
+    weldElapsedMs = elapsedMs;
+    weldTotalMs = totalMs;
+
     if (currentState == ScreenState::SvejseActive)
     {
         tft.fillRect(0, CONTENT_TOP, tft.width(), contentHeight(), SPIDER_BG);
@@ -351,7 +373,9 @@ void setRemainingTime(unsigned long ms)
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 2);
-        tft.drawString(String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y, 2);
+        tft.drawString("TID: " + secondsText(weldElapsedMs) + "/" + secondsText(weldTotalMs), screenCenterX(), STATUS_Y + 25, 2);
+        tft.drawString("mA: " + String(getCurrentMA(), 0) + "/" + String(getSvejseTargetCurrentMA(), 0), screenCenterX(), PIN_Y, 2);
+        tft.drawString("E: " + String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y + 22, 2);
     }
 }
 

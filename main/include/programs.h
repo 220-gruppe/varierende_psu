@@ -3,9 +3,20 @@
 
 #include <Arduino.h>
 
+struct WeldProgram
+{
+    const char *name;
+    unsigned long durationMs;
+    float targetCurrentMA;
+};
+
+extern const WeldProgram WELD_PROGRAMS[];
+extern const uint8_t WELD_PROGRAM_COUNT;
+
 extern int selectedProgram;
 extern unsigned long svejseStartTime;
 extern unsigned long svejseDuration;
+extern unsigned long svejseElapsedTime;
 extern bool svejseAktiv;
 
 const char *programName(int p);
@@ -15,6 +26,7 @@ void startSvejse();
 void stopSvejse();
 bool svejseHandler();
 unsigned long getSvejseTime();
-float getTargetJoule();
+unsigned long getSvejseElapsedTime();
+float getSvejseTargetCurrentMA();
 
 #endif

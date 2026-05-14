@@ -4,89 +4,87 @@
 #include "pwm.h"
 #include "auth.h"
 
-const unsigned long svejseTime_1 = 50000; // test værdi, adjust l8r
-const unsigned long svejseTime_2 = 60000;
-const unsigned long svejseTime_3 = 70000;
-const unsigned long svejseTime_4 = 183000;
-
-const float targetJoule_1 = 500.0f;
-const float targetJoule_2 = 1000.0f;
-const float targetJoule_3 = 1500.0f;
-const float targetJoule_4 = 2000.0f;
-
 int selectedProgram = 0;
 unsigned long svejseStartTime = 0;
 unsigned long svejseDuration = 0;
+unsigned long svejseElapsedTime = 0;
 bool svejseAktiv = false;
+
+namespace
+{
+const WeldProgram *selectedWeldProgram()
+{
+    if (!confirmProgram())
+    {
+        return nullptr;
+    }
+
+    return &WELD_PROGRAMS[selectedProgram - 1];
+}
+}
 
 unsigned long getSvejseTime()
 {
-    switch (selectedProgram)
-    {
-    case 1:
-        return svejseTime_1;
-    case 2:
-        return svejseTime_2;
-    case 3:
-        return svejseTime_3;
-    case 4:
-        return svejseTime_4;
-    default:
-        return 0;
-    }
+    const WeldProgram *program = selectedWeldProgram();
+    return program == nullptr ? 0 : program->durationMs;
 }
 
-float getTargetJoule()
+float getSvejseTargetCurrentMA()
 {
-    switch (selectedProgram)
+    const WeldProgram *program = selectedWeldProgram();
+    return program == nullptr ? 0.0f : program->targetCurrentMA;
+}
+
+unsigned long getSvejseElapsedTime()
+{
+    if (svejseAktiv)
     {
-    case 1:
-        return targetJoule_1;
-    case 2:
-        return targetJoule_2;
-    case 3:
-        return targetJoule_3;
-    case 4:
-        return targetJoule_4;
-    default:
-        return 0.0f;
+        return millis() - svejseStartTime;
     }
+
+    return svejseElapsedTime;
 }
 
 const char *programName(int p)
 {
-    switch (p)
+    if (p < 1 || p > WELD_PROGRAM_COUNT)
     {
-    case 1:
-        return "Program 1 "; 
-    case 2:
-        return "Program 2 ";
-    case 3:
-        return "Program 3 ";
-    case 4:
-        return "Program 4 ";
-    default:
         return "Intet  valgt";
     }
+
+    return WELD_PROGRAMS[p - 1].name;
 }
 
 bool confirmProgram()
 {
-    return (selectedProgram >= 1 && selectedProgram <= 4);
+    return selectedProgram >= 1 && selectedProgram <= WELD_PROGRAM_COUNT;
 }
 
 void cycleProgram()
 {
-    selectedProgram = (selectedProgram % 4) + 1;
+    selectedProgram = (selectedProgram % WELD_PROGRAM_COUNT) + 1;
 }
 
 void startSvejse()
 {
     svejseDuration = getSvejseTime(); 
-    svejseStartTime = millis();
-    resetEnergy();
+    float targetCurrentMA = getSvejseTargetCurrentMA();
 
-    if (!initializeSvejsningLog(currentUserUID(), selectedProgram, svejseStartTime, getTargetJoule()))
+    if (svejseDuration == 0 || targetCurrentMA <= 0.0f)
+    {
+        Serial.println("Ugyldigt svejseprogram - mangler tid eller target mA");
+        svejseAktiv = false;
+        disableSvejsning();
+        return;
+    }
+
+    svejseStartTime = millis();
+    svejseElapsedTime = 0;
+    resetEnergy();
+    resetWeldFault();
+    resetPwmControl();
+
+    if (!initializeSvejsningLog(currentUserUID(), selectedProgram, svejseStartTime, targetCurrentMA, svejseDuration))
     {
         Serial.println("Kunne ikke oprette svejselog - svejsning startes ikke");
         svejseAktiv = false;
@@ -97,12 +95,19 @@ void startSvejse()
     enableSvejsning();
     Serial.print("startSvejse called. Duration: ");
     Serial.print(svejseDuration);
+    Serial.print(" target mA: ");
+    Serial.print(targetCurrentMA, 0);
     Serial.print(" startTime: ");
     Serial.println(svejseStartTime);
 }
 
 void stopSvejse()
 {
+    if (svejseAktiv)
+    {
+        svejseElapsedTime = millis() - svejseStartTime;
+    }
+
     svejseAktiv = false;
     disableSvejsning();
 }
@@ -111,14 +116,12 @@ bool svejseHandler()
 {
     if (!svejseAktiv)
         return false;
-    unsigned long elapsed = millis() - svejseStartTime;
+    unsigned long elapsed = getSvejseElapsedTime();
 
-    if (hasReachedTarget() || elapsed >= svejseDuration)
+    if (hasWeldFault() || elapsed >= svejseDuration)
     {
         stopSvejse();
         return true; 
     }
     return false; 
 }
-
-

@@ -4,10 +4,14 @@
 #include <SPI.h>
 #include <SD.h>
 
-#define SD_CS 10
+extern const int SD_MOUNT_ATTEMPTS;
+extern const unsigned long SD_MOUNT_RETRY_DELAY_MS;
+
 void setupDatabase();
-bool DB(const String &db, const String &columns = "");
-bool databaseWrite(const String &data);
-bool databaseSearch(const String &query, String &result);
-void databaseRead();
+bool isSdReady();
+bool ensureCsvFile(const char *path, const char *header = "");
+bool appendLineToFile(const char *path, const String &line);
+bool findLineByFirstCsvField(const char *path, const String &value, String &result);
+void printFileContents(const char *path);
+
 #endif

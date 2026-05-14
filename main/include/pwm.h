@@ -4,16 +4,27 @@
 #include <Arduino.h>
 #include <driver/ledc.h>
 
-#define PWM_GPIO 1
-#define SHUTDOWN_PIN 2
-#define SHUNT_PIN 3
-#define SHUNT_RESISTOR_OHM 0.1055
-#define PWM_FREQ_HZ 50000
-#define PWM_RESOLUTION LEDC_TIMER_9_BIT
-#define PWM_MODE LEDC_LOW_SPEED_MODE
-#define PWM_TIMER LEDC_TIMER_0
-#define PWM_CHANNEL LEDC_CHANNEL_0
-#define VOLTAGE_ADC 18
+extern const float SHUNT_RESISTOR_OHM;
+extern const float VOLTAGE_DIVIDER_RATIO;
+extern const int SHUNT_ADC_SAMPLES;
+extern const int VOLTAGE_ADC_SAMPLES;
+extern const float ADC_RAW_MAX;
+extern const float SHUNT_ADC_FULL_SCALE_MV;
+extern const float VOLTAGE_ADC_FULL_SCALE_MV;
+extern const float PWM_MIN_DUTY;
+extern const float PWM_MAX_DUTY;
+extern const unsigned long PWM_DEBUG_PRINT_INTERVAL_MS;
+extern const float WELD_MIN_VALID_VOLTAGE_V;
+extern const float WELD_MIN_VALID_CURRENT_MA;
+extern const unsigned long WELD_FAULT_GRACE_MS;
+extern const unsigned long WELD_FAULT_CONFIRM_MS;
+
+enum class WeldFault
+{
+    None,
+    LowVoltage,
+    LowCurrent
+};
 
 void setupPwm();
 void resetPwmControl();
@@ -27,6 +38,10 @@ float calculatePowerW();
 void resetEnergy();
 float getTotalJoule();
 bool hasReachedTarget();
+void resetWeldFault();
+bool hasWeldFault();
+WeldFault getWeldFault();
+const char *weldFaultText();
 void enableSvejsning();
 void disableSvejsning();
 
