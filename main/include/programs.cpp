@@ -14,12 +14,12 @@ unsigned long svejseStartTime = 0;
 unsigned long svejseDuration  = 0;
 bool          svejseAktiv     = false;
 
-const Program PROGRAMS[] = {
-    { "Program 1 - Standard" , 0.3729f, 0.032f, 4300.0f }, 
-    { "Program 2 - XXXXXXXX" , 0.0f, 0.0f, 0.0f }, //placeholder værdier
-    { "Program 3 - XXXXXXXX" , 0.0f, 0.0f, 0.0f },
-    { "Program 4 - XXXXXXXX" , 0.0f, 0.0f, 0.0f },
-};
+// const Program PROGRAMS[] = {
+//     { "Program 1 - Standard" , 0.3729f, 0.032f, 4300.0f }, 
+//     { "Program 2 - XXXXXXXX" , 0.0f, 0.0f, 0.0f }, //placeholder værdier
+//     { "Program 3 - XXXXXXXX" , 0.0f, 0.0f, 0.0f },
+//     { "Program 4 - XXXXXXXX" , 0.0f, 0.0f, 0.0f },
+// };
 // const int NUM_PROGRAMS = sizeof(PROGRAMS) / sizeof(PROGRAMS[0]);
 
  
@@ -63,6 +63,7 @@ const Program PROGRAMS[] = {
 //     return PROGRAMS[index];
 // }
 
+
 float getTargetJoule()
 {
     switch (selectedProgram)
@@ -85,13 +86,13 @@ const char *programName(int p)
     switch (p)
     {
     case 1:
-        return "Program 1 - Standard";
+        return "Program 1";
     case 2:
-        return "Program 2 - XXXXXXXX";
+        return "Program 2";
     case 3:
-        return "Program 3 - XXXXXXXX";
+        return "Program 3";
     case 4:
-        return "Program 4 - XXXXXXXX";
+        return "Program 4";
     default:
         return "Intet valgt";
     }
@@ -185,7 +186,6 @@ void startSvejse()
 
     startEnergyAccumulator();
 
-    
     // Placeholder: Activate welding output pin here
     // add turn on svejsning
 }
@@ -219,8 +219,5 @@ void stopSvejse()
     disableSvejsning();
     // TODO: deactivate svejsning / output pin here
 }
-
-
-
 
 

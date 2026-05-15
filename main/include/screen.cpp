@@ -81,6 +81,7 @@ namespace
 
     void drawCenteredStatus(const String &text, uint16_t color, int y = STATUS_Y)
     {
+        tft.setTextSize(3);
         tft.setTextColor(color, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
         tft.drawString(text, screenCenterX(), y, 1);
@@ -193,7 +194,7 @@ namespace
     //     tft.drawString(String(getTotalJoule(), 1) + " J", screenCenterX(), PIN_Y, 1);
     // }
 
-    // ...existing code...
+
     void drawSvejseActive()
     { 
         tft.fillRect(0, CONTENT_TOP, tft.width(), tft.height() - CONTENT_TOP, SPIDER_BG);
@@ -240,9 +241,9 @@ namespace
 
     void drawSvejsningApproved()
     {
-        tft.setTextColor(TFT_GREEN, SPIDER_BG);
-        drawCenteredStatus("SVEJSNING GODKENDT", SPIDER_BLUE);
-        drawCenteredStatus("(LOGGER AUTOMATISK)", SPIDER_BLUE, STATUS_Y + 25);
+        tft.setTextColor(VERY_DARK_GREEN, SPIDER_BG);
+        drawCenteredStatus("SVEJSNING GODKENDT", VERY_DARK_GREEN);
+        drawCenteredStatus("(LOGGER AUTOMATISK)", VERY_DARK_GREEN, STATUS_Y + 25);
     }
 
     void drawSvejsningNotApproved()
@@ -268,6 +269,7 @@ namespace
         tft.setTextDatum(MC_DATUM);
         tft.drawString("(*)NY SVEJSNING", screenCenterX(), STATUS_Y);
         tft.drawString("(1)AFSLUT OG LOGUD", screenCenterX(), STATUS_Y + 30);
+        tft.setTextSize(2);
     }
 
     // USER SCREENS WITHOUT LOGO ========================================================================================

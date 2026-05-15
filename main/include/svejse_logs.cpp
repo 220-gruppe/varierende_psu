@@ -20,10 +20,10 @@ float calculatedOutputEnergy()
     return getCurrentMA() * getCurrentMA() * MODSTAND_OHM * t;
 }
 
-float getTargetEnergy()
-{
-    return getTargetJoule();
-}
+// float getTargetEnergy()
+// {
+//     return getTargetJoule();
+// }
 
 void saveSvejsningResult()
 {

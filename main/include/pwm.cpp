@@ -1,5 +1,8 @@
 #include "pwm.h"
 #include "programs.h"
+#include "driver/adc.h"
+#include "soc/sens_reg.h"
+#include "soc/soc.h"
 
 namespace
 {
@@ -8,20 +11,25 @@ constexpr int ADC_SAMPLES                  = 50;
 constexpr float ADC_MAX_RAW                = 4095.0f;
 constexpr float ADC_0DB_MAX_MV             = 950.0f;
 
-float currentDuty         = 0.0f;
+float currentDuty         = 255.0f;
 float currentMA           = 0.0f;
 float lastTargetCurrentMA = 0.0f;
 float shuntVoltageMV      = 0.0f;
 unsigned long lastPrint   = 0;
-// float currentDuty         = 255.0f;
-
-float energyDeliveredJ          = 0.0f;
-bool accumulatorActive          = false;
 
 // Joule måling variabler
 float totalJoule               = 0.0;
-bool reachedTarget             = false;
 unsigned long lastEnergyUpdate = 0;
+float energyDeliveredJ         = 0.0f;
+bool reachedTarget             = false;
+bool accumulatorActive         = false;
+}
+
+uint16_t readShuntAdcRegister()
+{
+  CLEAR_PERI_REG_MASK(SENS_SAR_MEAS1_CTRL2_REG, SENS_MEAS1_START_SAR);
+  SET_PERI_REG_MASK(SENS_SAR_MEAS1_CTRL2_REG, SENS_MEAS1_START_FORCE);
+  SET_PERI_REG_MASK(SENS_SAR_MEAS1_CTRL2_REG, SENS_MEAS1_START_SAR);
 }
 
 void setupPwm()
@@ -31,8 +39,9 @@ void setupPwm()
   digitalWrite(SHUTDOWN_PIN, LOW);  // Shutdown pin LOW ved startup (gate driver disabled)
   
   pinMode(SHUNT_PIN, INPUT);
-  analogReadResolution(12);
-  analogSetPinAttenuation(SHUNT_PIN, ADC_0db);
+  adc1_config_width(ADC_WIDTH_BIT_12);
+  adc1_config_channel_atten(SHUNT_ADC_CHANNEL, ADC_ATTEN_DB_0);
+  adc1_get_raw(SHUNT_ADC_CHANNEL);
   analogSetPinAttenuation(VOLTAGE_ADC, ADC_11db);
 
 
@@ -77,14 +86,14 @@ void pwmControlStep(float targetCurrentMA, float kp)
 {
   lastTargetCurrentMA = targetCurrentMA;
   const uint32_t pwmMaxDuty = (1UL << PWM_RESOLUTION) - 1;
-  uint32_t sumRaw = 0;
+  uint32_t sumMV = 0;
 
-  for (int i = 0; i < ADC_SAMPLES; i++)
+  for (int i = 0; i < 50; i++)
   {
-    sumRaw += readShuntAdcRegister();
+    sumMV += analogReadMilliVolts(SHUNT_PIN);
   }
 
-  shuntVoltageMV = adcRawToMilliVolts(sumRaw / ADC_SAMPLES);
+  shuntVoltageMV = sumMV / 50.0f;
   currentMA = shuntVoltageMV / SHUNT_RESISTOR_OHM;
 
   if (svejseAktiv)
@@ -175,7 +184,9 @@ float getDeliveredEnergyJ()
 {
   return energyDeliveredJ;
 }
-float readVoltage (){
+
+float readVoltage ()
+{
   uint32_t sumMV = 0;
   for (int i = 0; i < 10; i++) {
     sumMV += analogReadMilliVolts(VOLTAGE_ADC);
@@ -184,35 +195,40 @@ float readVoltage (){
   return voltageMV / 1000.0f;
 }
 
-float calculatePowerW() {
+float calculatePowerW()
+{
   float currentA = getCurrentMA() / 1000.0f; 
   float voltageV = readVoltage();
   return currentA * voltageV;
 }
 
-void resetEnergy() {
+void resetEnergy() 
+{
   totalJoule = 0.0;
   reachedTarget = false;
   lastEnergyUpdate = millis();
 }
 
-float getTotalJoule() {
+float getTotalJoule() 
+{
   return totalJoule;
 }
 
-bool hasReachedTarget() {
+bool hasReachedTarget() 
+{
   return reachedTarget;
 }
 
-void enableSvejsning() {
+void enableSvejsning() 
+{
   digitalWrite(SHUTDOWN_PIN, HIGH);  
   Serial.println("Svejsning ENABLED (Shutdown pin HIGH)");
 }
 
-void disableSvejsning() {
+void disableSvejsning() 
+{
   digitalWrite(SHUTDOWN_PIN, LOW);   
   ledc_set_duty(PWM_MODE, PWM_CHANNEL, 0); 
   ledc_update_duty(PWM_MODE, PWM_CHANNEL);
   Serial.println("Svejsning DISABLED (Shutdown pin LOW, PWM = 0)");
 }
-

@@ -16,7 +16,6 @@
 #define PWM_CHANNEL         LEDC_CHANNEL_0
 #define PWM_GPIO 1
 
-
 void setupPwm();
 void resetPwmControl();
 void stopPwmOutput();
