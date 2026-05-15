@@ -1,112 +1,146 @@
 #include "database.h"
 
-String currentDB = "";
+namespace
+{
+bool sdReady = false;
+constexpr uint8_t SD_CS = 10;
+constexpr uint8_t SPI_MISO_PIN = 11;
+constexpr uint8_t SPI_MOSI_PIN = 13;
+constexpr uint8_t SPI_SCK_PIN = 12;
+}
 
 namespace
 {
-String buildDbPath(const String &db)
+String csvPath(const char *path)
 {
-    String path = db;
+    String normalized = path;
 
-    if (!path.startsWith("/"))
+    if (!normalized.startsWith("/"))
     {
-        path = "/" + path;
+        normalized = "/" + normalized;
     }
 
-    if (!path.endsWith(".csv"))
+    if (!normalized.endsWith(".csv"))
     {
-        path += ".csv";
+        normalized += ".csv";
     }
 
-    return path;
+    return normalized;
 }
 
-bool openCurrentDb(const char *mode, File &dbFile, const char *action)
+bool openCsvFile(const char *path, const char *mode, File &file, const char *action)
 {
-    if (currentDB.length() == 0)
-    {
-        Serial.println("DB is not selected");
-        return false;
-    }
+    String normalized = csvPath(path);
+    file = SD.open(normalized, mode);
 
-    dbFile = SD.open(currentDB, mode);
-    if (!dbFile)
-    {
-        Serial.print("Failed to open database for ");
-        Serial.print(action);
-        Serial.print(": ");
-        Serial.println(currentDB);
-        return false;
-    }
-
-    return true;
-}
-}
-
-void setupDatabase(){
-    pinMode(SD_CS, OUTPUT);
-    if (!SD.begin(SD_CS, SPI))
-    {
-        Serial.println("SD CONNECTION FAILED");
-    }
-    else
-    {
-        Serial.println("SD CONNECTED SUCCES");
-    }
-}
-
-bool DB(const String &db, const String &columns)
-{
-    String path = buildDbPath(db);
-    bool exists = SD.exists(path);
-
-    currentDB = path;
-
-    if (currentDB.length() == 0)
-    {
-        Serial.println("Failed to select database path");
-        return false;
-    }
-
-    if (exists)
+    if (file)
     {
         return true;
     }
 
-    File dbFile = SD.open(path, FILE_WRITE, true);
-    if (!dbFile)
+    Serial.print("Kunne ikke aabne CSV til ");
+    Serial.print(action);
+    Serial.print(": ");
+    Serial.println(normalized);
+    return false;
+}
+}
+
+void setupDatabase()
+{
+    pinMode(SD_CS, OUTPUT);
+    SPI.begin(SPI_SCK_PIN, SPI_MISO_PIN, SPI_MOSI_PIN);
+    sdReady = false;
+
+    for (int attempt = 1; attempt <= SD_MOUNT_ATTEMPTS; attempt++)
     {
-        Serial.print("Failed to create database: ");
-        Serial.println(path);
+        if (SD.begin(SD_CS, SPI))
+        {
+            sdReady = true;
+            Serial.println("SD CONNECTED SUCCES");
+            return;
+        }
+
+        Serial.print("SD CONNECTION FAILED, forsog ");
+        Serial.print(attempt);
+        Serial.print("/");
+        Serial.println(SD_MOUNT_ATTEMPTS);
+        delay(SD_MOUNT_RETRY_DELAY_MS);
+    }
+
+    Serial.println("SD IKKE MONTERET - CSV logging er deaktiveret");
+}
+
+bool isSdReady()
+{
+    return sdReady;
+}
+
+bool ensureCsvFile(const char *path, const char *header)
+{
+    if (!isSdReady())
+    {
+        Serial.print("SD er ikke monteret, kan ikke oprette CSV: ");
+        Serial.println(csvPath(path));
         return false;
     }
 
-    if (columns.length() > 0)
+    String normalized = csvPath(path);
+
+    if (SD.exists(normalized))
     {
-        dbFile.println(columns);
+        return true;
     }
 
-    dbFile.close();
+    File file = SD.open(normalized, FILE_WRITE, true);
+    if (!file)
+    {
+        Serial.print("Kunne ikke oprette CSV: ");
+        Serial.println(normalized);
+        return false;
+    }
+
+    if (header != nullptr && strlen(header) > 0)
+    {
+        file.println(header);
+    }
+
+    file.close();
     return true;
 }
 
-bool databaseWrite(const String &data)
+bool appendLineToFile(const char *path, const String &line)
 {
-    File dbFile;
-    if (!openCurrentDb(FILE_APPEND, dbFile, "write"))
+    if (!isSdReady())
+    {
+        Serial.print("SD er ikke monteret, kan ikke skrive CSV: ");
+        Serial.println(csvPath(path));
+        return false;
+    }
+
+    File file;
+    if (!openCsvFile(path, FILE_APPEND, file, "skrivning"))
     {
         return false;
     }
 
-    dbFile.println(data);
-    dbFile.close();
+    file.println(line);
+    file.close();
     return true;
 }
 
-bool databaseSearch(const String &query, String &result)
+bool findLineByFirstCsvField(const char *path, const String &value, String &result)
 {
-    File dbFile;
-    if (!openCurrentDb(FILE_READ, dbFile, "read"))
+    if (!isSdReady())
+    {
+        Serial.print("SD er ikke monteret, kan ikke laese CSV: ");
+        Serial.println(csvPath(path));
+        result = "";
+        return false;
+    }
+
+    File file;
+    if (!openCsvFile(path, FILE_READ, file, "laesning"))
     {
         result = "";
         return false;
@@ -114,40 +148,56 @@ bool databaseSearch(const String &query, String &result)
 
     result = "";
 
-    while (dbFile.available())
+    while (file.available())
     {
-        String line = dbFile.readStringUntil('\n');
+        String line = file.readStringUntil('\n');
         line.trim();
 
-        if (line.indexOf(query) != -1)
+        if (line.length() == 0)
+        {
+            continue;
+        }
+
+        int firstComma = line.indexOf(',');
+        String firstField = firstComma == -1 ? line : line.substring(0, firstComma);
+        firstField.trim();
+
+        if (firstField == value)
         {
             result = line;
-            dbFile.close();
+            file.close();
             return true;
         }
     }
 
-    dbFile.close();
+    file.close();
     return false;
 }
 
-void databaseRead()
+void printFileContents(const char *path)
 {
-    File dbFile;
-    if (!openCurrentDb(FILE_READ, dbFile, "read"))
+    if (!isSdReady())
+    {
+        Serial.print("SD er ikke monteret, kan ikke printe CSV: ");
+        Serial.println(csvPath(path));
+        return;
+    }
+
+    File file;
+    if (!openCsvFile(path, FILE_READ, file, "print"))
     {
         return;
     }
 
-    Serial.print("Database content from ");
-    Serial.println(currentDB);
+    Serial.print("CSV indhold: ");
+    Serial.println(csvPath(path));
 
-    while (dbFile.available())
+    while (file.available())
     {
-        String line = dbFile.readStringUntil('\n');
+        String line = file.readStringUntil('\n');
         line.trim();
         Serial.println(line);
     }
 
-    dbFile.close();
+    file.close();
 }

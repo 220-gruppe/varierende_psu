@@ -10,6 +10,9 @@ namespace
     unsigned long lastAuthActivity = 0;
     AuthState currentState = AuthState::Ready;
 
+    constexpr char USERS_FILE[] = "/users.csv";
+    constexpr char USERS_COLUMNS[] = "UID,USER,PASSWORD";
+
     void clearLoadedUser()
     {
         uid = "";
@@ -73,8 +76,12 @@ namespace
         user = newUser;
         password = newPassword;
 
-        DB("users", "UID,USER,PASSWORD");
-        return databaseWrite(uid + "," + user + "," + password);
+        if (!ensureCsvFile(USERS_FILE, USERS_COLUMNS))
+        {
+            return false;
+        }
+
+        return appendLineToFile(USERS_FILE, uid + "," + user + "," + password);
     }
 
     bool findUserLineByUid(const String &searchUid, String &userLine)
@@ -84,14 +91,18 @@ namespace
             return false;
         }
 
-        DB("users", "UID,USER,PASSWORD");
-        return databaseSearch(searchUid, userLine);
+        if (!ensureCsvFile(USERS_FILE, USERS_COLUMNS))
+        {
+            return false;
+        }
+
+        return findLineByFirstCsvField(USERS_FILE, searchUid, userLine);
     }
 }
 
 void setupAuth()
 {
-    DB("users", "UID,USER,PASSWORD");
+    ensureCsvFile(USERS_FILE, USERS_COLUMNS);
 }
 
 bool beginPendingUserCreation(const String &newUser, const String &newPassword)
@@ -186,6 +197,11 @@ String authStateName()
 String currentUserName()
 {
     return user;
+}
+
+String currentUserUID()
+{
+    return uid;
 }
 
 void resetAuthTimer()

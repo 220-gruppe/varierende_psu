@@ -7,9 +7,8 @@
 namespace
 {
 WebServer server(80);
-
-constexpr char SSID[] = "Spider-feet";
-constexpr char PASSWORD[] = "";
+constexpr char SERVER_SSID[] = "Spider-feet";
+constexpr char SERVER_PASSWORD[] = "";
 
 const String STYLE = "<style>"
                      "*{box-sizing: border-box;}"
@@ -36,7 +35,7 @@ static void handleResetFile();
 
 void setupServer()
 {
-    WiFi.softAP(SSID, PASSWORD);
+    WiFi.softAP(SERVER_SSID, SERVER_PASSWORD);
     IPAddress ip = WiFi.softAPIP();
 
     server.on("/gemLogin", HTTP_POST, handleGemLogin);
@@ -171,7 +170,7 @@ static void handleResetFile()
         SD.remove("/users.csv");
     }
 
-    DB("users", "UID,USER,PASSWORD");
+    ensureCsvFile("/users.csv", "UID,USER,PASSWORD");
     logout();
 
     Serial.println("users slettet");

@@ -3,6 +3,12 @@
 
 namespace
 {
+constexpr uint8_t RFID_SPI_MISO = 11;
+constexpr uint8_t RFID_SPI_MOSI = 13;
+constexpr uint8_t RFID_SPI_SCK = 12;
+constexpr uint8_t RFID_SDA = 43;
+constexpr uint8_t RFID_RST = 21;
+
 MFRC522 rc(RFID_SDA, RFID_RST);
 }
 

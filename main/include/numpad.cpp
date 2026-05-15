@@ -147,7 +147,7 @@ void numpadLogik()
     }
     else if (value.length() > 0)
     {
-        if (typed.length() < 4)
+        if (typed.length() < NUMPAD_PIN_LENGTH)
         {
             typed += value;
             userDone = false;
@@ -162,5 +162,5 @@ void numpadLogik()
         Serial.println("#");
     }
 
-    delay(250);
+    delay(NUMPAD_DEBOUNCE_MS);
 }

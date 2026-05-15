@@ -25,8 +25,6 @@ namespace
         Choice
     };
 
-    constexpr unsigned long INACTIVITY_TIMEOUT_MS = 900000; // 15 minutes
-    constexpr unsigned long TEMP_DISPLAY_MS = 3000;
     unsigned long stateTimer = 0;
 
     UserInterfaceState currentUserInterfaceState = UserInterfaceState::Idle;
@@ -236,14 +234,20 @@ namespace
 
     void handleSvejseState()
     {
+        unsigned long elapsed = getSvejseElapsedTime();
+        setSvejseTime(elapsed, svejseDuration);
         setScreenState(ScreenState::SvejseActive);
         forceRedraw();
 
         if (svejseHandler())
         {
-            stopSvejse();
-            saveSvejsningResult();
-            currentUserInterfaceState = UserInterfaceState::Result;
+        Serial.println("svejseHandler returned true");
+        saveSvejsningResult();
+        Serial.println("saveSvejsningResult done");
+        LogSvejseData();
+        Serial.println("LogSvejseData done");
+        currentUserInterfaceState = UserInterfaceState::Result;
+        Serial.println("Transitioning to Result");
         }
 
         // unsigned long elapsed = millis() - svejseStartTime;

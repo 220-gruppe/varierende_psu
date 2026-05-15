@@ -1,101 +1,58 @@
+#include "svejse_logs.h"
 #include "programs.h"
 #include "tempsensor.h"
 #include "pwm.h"
+#include "auth.h"
 
-const float targetJoule_1   = 500.0f;
-const float targetJoule_2   = 1000.0f;
-const float targetJoule_3   = 1500.0f;
-const float targetJoule_4   = 2000.0f;
+int selectedProgram             = 0;
+unsigned long svejseStartTime   = 0;
+unsigned long svejseDuration    = 0;
+unsigned long svejseElapsedTime = 0;
+bool svejseAktiv                = false;
 
-const int NUM_PROGRAMS = 4;
-
-int           selectedProgram = 0;
-unsigned long svejseStartTime = 0;
-unsigned long svejseDuration  = 0;
-bool          svejseAktiv     = false;
-
-// const Program PROGRAMS[] = {
-//     { "Program 1 - Standard" , 0.3729f, 0.032f, 4300.0f }, 
-//     { "Program 2 - XXXXXXXX" , 0.0f, 0.0f, 0.0f }, //placeholder værdier
-//     { "Program 3 - XXXXXXXX" , 0.0f, 0.0f, 0.0f },
-//     { "Program 4 - XXXXXXXX" , 0.0f, 0.0f, 0.0f },
-// };
-// const int NUM_PROGRAMS = sizeof(PROGRAMS) / sizeof(PROGRAMS[0]);
-
- 
-// unsigned long getSvejseTime()
-// {
-//     switch (selectedProgram)
-//     {
-//     case 1:
-//         return svejseTime_1;
-//     case 2:
-//         return svejseTime_2;
-//     case 3:
-//         return svejseTime_3;
-//     case 4:
-//         return svejseTime_4;
-//     default:
-//         return 0;
-//     }
-// }
-
-// const char *programName(int p)
-// {
-//     switch (p)
-//     {
-//     case 1:
-//         return "Program 1 "; 
-//     case 2:
-//         return "Program 2 ";
-//     case 3:
-//         return "Program 3 ";
-//     case 4:
-//         return "Program 4 ";
-//     default:
-//         return "Intet  valgt";
-//     }
-// }
-
-// const Program& currentProgram() 
-// {
-//     int index = constrain(selectedProgram - 1, 0, NUM_PROGRAMS -1);
-//     return PROGRAMS[index];
-// }
-
-
-float getTargetJoule()
+namespace
 {
-    switch (selectedProgram)
+    const WeldProgram *selectedWeldProgram()
     {
-    case 1:
-        return targetJoule_1;
-    case 2:
-        return targetJoule_2;
-    case 3:
-        return targetJoule_3;
-    case 4:
-        return targetJoule_4;
-    default:
-        return 0.0f;
+        if (!confirmProgram())
+        {
+            return nullptr;
+        }
+
+        return &WELD_PROGRAMS[selectedProgram - 1];
     }
+}
+
+unsigned long getSvejseTime()
+{
+    const WeldProgram *program = selectedWeldProgram();
+    return program == nullptr ? 0 : program->durationMs;
+}
+
+float getSvejseTargetCurrentMA()
+{
+    const WeldProgram *program = selectedWeldProgram();
+    return program == nullptr ? 0.0f : program->targetCurrentMA;
+}
+
+unsigned long getSvejseElapsedTime()
+{
+    if (svejseAktiv)
+    {
+        return millis() - svejseStartTime;
+    }
+
+    return svejseElapsedTime;
 }
 
 const char *programName(int p)
 {
-    switch (p)
+    if (p < 1 || p > WELD_PROGRAM_COUNT)
     {
-    case 1:
-        return "Program 1";
-    case 2:
-        return "Program 2";
-    case 3:
-        return "Program 3";
-    case 4:
-        return "Program 4";
-    default:
-        return "Intet valgt";
+        return "Intet  valgt";
     }
+
+    return WELD_PROGRAMS[p - 1].name;
 }
 
 // const char *programName(int p)
@@ -106,7 +63,7 @@ const char *programName(int p)
 
 bool confirmProgram()
 {
- return (selectedProgram >= 1 && selectedProgram <= NUM_PROGRAMS);
+    return selectedProgram >= 1 && selectedProgram <= WELD_PROGRAM_COUNT;
 }
 
 // bool confirmProgram()
@@ -127,7 +84,7 @@ void cycleProgram()
 // float getTargetEnergy()
 // {
 //     const Program& p = currentProgram();
-//     return p.mass_kg * 500.0f * (p.targetTemp_C - AVG_TEMP); 
+//     return p.mass_kg * 500.0f * (p.targetTemp_C - AVG_TEMP);
 // }
 
 float getTargetEnergy()
@@ -145,7 +102,8 @@ float getTargetEnergy()
 float getSvejseProgress()
 {
     float target = getTargetJoule();
-    if (target <= 0.0f) return 1.0f;
+    if (target <= 0.0f)
+        return 1.0f;
     return constrain(getDeliveredEnergyJ() / target, 0.0f, 1.0f);
 }
 
@@ -165,38 +123,59 @@ unsigned long getPredictedRemainingTime()
     float I = getCurrentMA() / 1000.0f;
     float R = PROGRAMS[selectedProgram - 1].resistance_ohm;
     float power = I * I * R;
-    if (power < 0.001f) return 99999;
+    if (power < 0.001f)
+        return 99999;
     float E_remaining = getTargetEnergy() - getDeliveredEnergyJ();
-    if (E_remaining <= 0.0f) return 0;
+    if (E_remaining <= 0.0f)
+        return 0;
     return (unsigned long)((E_remaining / power) * 1000.0f);
+    selectedProgram = (selectedProgram % WELD_PROGRAM_COUNT) + 1;
 }
 
 void startSvejse()
 {
-    // svejseDuration = getSvejseTime(); 
+    svejseDuration = getSvejseTime();
+    float targetCurrentMA = getSvejseTargetCurrentMA();
+
+    if (svejseDuration == 0 || targetCurrentMA <= 0.0f)
+    {
+        Serial.println("Ugyldigt svejseprogram - mangler tid eller target mA");
+        svejseAktiv = false;
+        disableSvejsning();
+        return;
+    }
+
     svejseStartTime = millis();
-    svejseDuration = 0;
-    svejseAktiv = true;
+    svejseElapsedTime = 0;
     resetEnergy();
+    resetWeldFault();
+    resetPwmControl();
+
+    if (!initializeSvejsningLog(currentUserUID(), selectedProgram, svejseStartTime, targetCurrentMA, svejseDuration))
+    {
+        Serial.println("Kunne ikke oprette svejselog - svejsning startes ikke");
+        svejseAktiv = false;
+        return;
+    }
+
+    svejseAktiv = true;
     enableSvejsning();
     Serial.print("startSvejse called. Duration: ");
     Serial.print(svejseDuration);
+    Serial.print(" target mA: ");
+    Serial.print(targetCurrentMA, 0);
     Serial.print(" startTime: ");
     Serial.println(svejseStartTime);
-
-    startEnergyAccumulator();
-
-    // Placeholder: Activate welding output pin here
-    // add turn on svejsning
 }
 
 bool svejseHandler()
 {
-    if (!svejseAktiv) return true;
+    if (!svejseAktiv)
+        return true;
 
-    unsigned long elapsed       = millis() - svejseStartTime;
-    unsigned long remaining     = getPredictedRemainingTime();
-    svejseDuration              = elapsed + remaining;
+    unsigned long elapsed = millis() - svejseStartTime;
+    unsigned long remaining = getPredictedRemainingTime();
+    svejseDuration = elapsed + remaining;
 
     return getSvejseProgress() >= 1.0f;
 
@@ -207,17 +186,33 @@ bool svejseHandler()
     // if (elapsed >= svejseDuration)
     // {
     //     stopSvejse();
-    //     return true; 
+    //     return true;
     // }
-    // return false; 
+    // return false;
 }
 
 void stopSvejse()
 {
+    if (svejseAktiv)
+    {
+        svejseElapsedTime = millis() - svejseStartTime;
+    }
+
     svejseAktiv = false;
     // stopPwmOutput();
     disableSvejsning();
-    // TODO: deactivate svejsning / output pin here
 }
 
+bool svejseHandler()
+{
+    if (!svejseAktiv)
+        return false;
+    unsigned long elapsed = getSvejseElapsedTime();
 
+    if (hasWeldFault() || elapsed >= svejseDuration)
+    {
+        stopSvejse();
+        return true;
+    }
+    return false;
+}

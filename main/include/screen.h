@@ -40,7 +40,7 @@ void setupScreen();
 void setScreenState(ScreenState state);
 void showTemporaryScreen(ScreenState state);
 void screenPinPreview(const String &typedPin);
-void setRemainingTime(unsigned long ms);
+void setSvejseTime(unsigned long elapsedMs, unsigned long totalMs);
 void drawScreen();
 
 
