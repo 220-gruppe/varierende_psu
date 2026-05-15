@@ -245,6 +245,9 @@ namespace
     { // maybe add graph with mA and mV?
         tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
         tft.setTextDatum(MC_DATUM);
+    { // maybe add graph with mA and mV?
+        tft.setTextColor(SPIDER_BLUE, SPIDER_BG);
+        tft.setTextDatum(MC_DATUM);
         tft.setTextSize(2);
         tft.drawString("SVEJSER...", screenCenterX(), STATUS_Y, 1);
         tft.drawString("TID: " + secondsText(weldElapsedMs) + "/" + secondsText(weldTotalMs), screenCenterX(), STATUS_Y + 25, 1);

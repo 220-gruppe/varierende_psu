@@ -134,7 +134,7 @@ unsigned long getPredictedRemainingTime()
 
 void startSvejse()
 {
-    svejseDuration = getSvejseTime();
+    svejseDuration = getSvejseTime(); 
     float targetCurrentMA = getSvejseTargetCurrentMA();
 
     if (svejseDuration == 0 || targetCurrentMA <= 0.0f)
@@ -166,29 +166,6 @@ void startSvejse()
     Serial.print(targetCurrentMA, 0);
     Serial.print(" startTime: ");
     Serial.println(svejseStartTime);
-}
-
-bool svejseHandler()
-{
-    if (!svejseAktiv)
-        return true;
-
-    unsigned long elapsed = millis() - svejseStartTime;
-    unsigned long remaining = getPredictedRemainingTime();
-    svejseDuration = elapsed + remaining;
-
-    return getSvejseProgress() >= 1.0f;
-
-    // if (!svejseAktiv)
-    //     return false;
-    // unsigned long elapsed = millis() - svejseStartTime;
-
-    // if (elapsed >= svejseDuration)
-    // {
-    //     stopSvejse();
-    //     return true;
-    // }
-    // return false;
 }
 
 void stopSvejse()

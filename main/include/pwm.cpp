@@ -336,7 +336,7 @@ void pwmControlStep(float targetCurrentMA, float kp)
 
   if (nowMs - lastPrint > PWM_DEBUG_PRINT_INTERVAL_MS)
   {
-    lastPrint    = millis();
+    lastPrint = millis();
     float pwmPct = (currentDuty / pwmMaxDuty) * 100.0f;
 
     Serial.print("V_load: ");
@@ -389,6 +389,20 @@ void pwmControlStep(float targetCurrentMA, float kp)
     Serial.print(energyDeliveredJ);
     Serial.println("Energy: ");
   }
+}
+
+void resetPwmControl()
+{
+  currentDuty = PWM_MIN_DUTY;
+  lastPrint = 0;
+  ledc_set_duty(PWM_MODE, PWM_CHANNEL, static_cast<uint32_t>(currentDuty));
+  ledc_update_duty(PWM_MODE, PWM_CHANNEL);
+}
+
+void stopPwmOutput()
+{
+  ledc_set_duty(PWM_MODE, PWM_CHANNEL, 0);
+  ledc_update_duty(PWM_MODE, PWM_CHANNEL);
 }
 
 void resetPwmControl()
